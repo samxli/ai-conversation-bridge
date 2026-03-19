@@ -1,0 +1,57 @@
+[
+  {
+    "worker_id": "WK001",
+    "name": "张伟 (Wei Zhang)",
+    "title": "Senior Software Engineer",
+    "department": "Engineering",
+    "manager": "李娜 (Na Li)",
+    "manager_id": "WK010",
+    "location": "Shanghai, China",
+    "hire_date": "2021-03-15",
+    "email": "wei.zhang@example.com"
+  },
+  {
+    "worker_id": "WK002",
+    "name": "王芳 (Fang Wang)",
+    "title": "Product Manager",
+    "department": "Product",
+    "manager": "陈明 (Ming Chen)",
+    "manager_id": "WK011",
+    "location": "Beijing, China",
+    "hire_date": "2020-08-01",
+    "email": "fang.wang@example.com"
+  },
+  {
+    "worker_id": "WK003",
+    "name": "佐藤太郎 (Taro Sato)",
+    "title": "Solutions Architect",
+    "department": "Engineering",
+    "manager": "李娜 (Na Li)",
+    "manager_id": "WK010",
+    "location": "Tokyo, Japan",
+    "hire_date": "2019-11-20",
+    "email": "taro.sato@example.com"
+  },
+  {
+    "worker_id": "WK004",
+    "name": "김민수 (Minsu Kim)",
+    "title": "HR Business Partner",
+    "department": "Human Resources",
+    "manager": "박지영 (Jiyoung Park)",
+    "manager_id": "WK012",
+    "location": "Seoul, South Korea",
+    "hire_date": "2022-01-10",
+    "email": "minsu.kim@example.com"
+  },
+  {
+    "worker_id": "WK005",
+    "name": "刘洋 (Yang Liu)",
+    "title": "Financial Analyst",
+    "department": "Finance",
+    "manager": "赵静 (Jing Zhao)",
+    "manager_id": "WK013",
+    "location": "Shanghai, China",
+    "hire_date": "2023-06-01",
+    "email": "yang.liu@example.com"
+  }
+]

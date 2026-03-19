@@ -1,0 +1,47 @@
+[
+  {
+    "worker_id": "WK001",
+    "balances": {
+      "vacation": {"available": 12, "used": 3, "total": 15, "unit": "days"},
+      "sick": {"available": 8, "used": 2, "total": 10, "unit": "days"},
+      "personal": {"available": 2, "used": 1, "total": 3, "unit": "days"}
+    },
+    "as_of": "2026-03-01"
+  },
+  {
+    "worker_id": "WK002",
+    "balances": {
+      "vacation": {"available": 10, "used": 5, "total": 15, "unit": "days"},
+      "sick": {"available": 9, "used": 1, "total": 10, "unit": "days"},
+      "personal": {"available": 3, "used": 0, "total": 3, "unit": "days"}
+    },
+    "as_of": "2026-03-01"
+  },
+  {
+    "worker_id": "WK003",
+    "balances": {
+      "vacation": {"available": 18, "used": 2, "total": 20, "unit": "days"},
+      "sick": {"available": 10, "used": 0, "total": 10, "unit": "days"},
+      "personal": {"available": 3, "used": 0, "total": 3, "unit": "days"}
+    },
+    "as_of": "2026-03-01"
+  },
+  {
+    "worker_id": "WK004",
+    "balances": {
+      "vacation": {"available": 8, "used": 7, "total": 15, "unit": "days"},
+      "sick": {"available": 6, "used": 4, "total": 10, "unit": "days"},
+      "personal": {"available": 1, "used": 2, "total": 3, "unit": "days"}
+    },
+    "as_of": "2026-03-01"
+  },
+  {
+    "worker_id": "WK005",
+    "balances": {
+      "vacation": {"available": 14, "used": 1, "total": 15, "unit": "days"},
+      "sick": {"available": 10, "used": 0, "total": 10, "unit": "days"},
+      "personal": {"available": 3, "used": 0, "total": 3, "unit": "days"}
+    },
+    "as_of": "2026-03-01"
+  }
+]
