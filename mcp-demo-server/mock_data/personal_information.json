@@ -1,0 +1,117 @@
+[
+  {
+    "worker_id": "WK001",
+    "legal_name": "张伟",
+    "preferred_name": "Wei Zhang",
+    "date_of_birth": "1992-06-15",
+    "gender": "Male",
+    "nationality": "Chinese",
+    "marital_status": "Married",
+    "phone": "+86-138-0001-0001",
+    "email": "wei.zhang@example.com",
+    "address": {
+      "street": "100 Nanjing Road",
+      "city": "Shanghai",
+      "province": "Shanghai",
+      "postal_code": "200001",
+      "country": "China"
+    },
+    "emergency_contact": {
+      "name": "张丽 (Li Zhang)",
+      "relationship": "Spouse",
+      "phone": "+86-138-0001-0002"
+    }
+  },
+  {
+    "worker_id": "WK002",
+    "legal_name": "王芳",
+    "preferred_name": "Fang Wang",
+    "date_of_birth": "1990-03-22",
+    "gender": "Female",
+    "nationality": "Chinese",
+    "marital_status": "Single",
+    "phone": "+86-139-0002-0001",
+    "email": "fang.wang@example.com",
+    "address": {
+      "street": "50 Chaoyang Avenue",
+      "city": "Beijing",
+      "province": "Beijing",
+      "postal_code": "100020",
+      "country": "China"
+    },
+    "emergency_contact": {
+      "name": "王强 (Qiang Wang)",
+      "relationship": "Father",
+      "phone": "+86-139-0002-0002"
+    }
+  },
+  {
+    "worker_id": "WK003",
+    "legal_name": "佐藤太郎",
+    "preferred_name": "Taro Sato",
+    "date_of_birth": "1988-11-03",
+    "gender": "Male",
+    "nationality": "Japanese",
+    "marital_status": "Married",
+    "phone": "+81-90-1234-5678",
+    "email": "taro.sato@example.com",
+    "address": {
+      "street": "1-2-3 Shibuya",
+      "city": "Tokyo",
+      "province": "Tokyo",
+      "postal_code": "150-0002",
+      "country": "Japan"
+    },
+    "emergency_contact": {
+      "name": "佐藤花子 (Hanako Sato)",
+      "relationship": "Spouse",
+      "phone": "+81-90-8765-4321"
+    }
+  },
+  {
+    "worker_id": "WK004",
+    "legal_name": "김민수",
+    "preferred_name": "Minsu Kim",
+    "date_of_birth": "1995-07-30",
+    "gender": "Male",
+    "nationality": "Korean",
+    "marital_status": "Single",
+    "phone": "+82-10-1234-5678",
+    "email": "minsu.kim@example.com",
+    "address": {
+      "street": "25 Gangnam-daero",
+      "city": "Seoul",
+      "province": "Seoul",
+      "postal_code": "06236",
+      "country": "South Korea"
+    },
+    "emergency_contact": {
+      "name": "김영희 (Younghee Kim)",
+      "relationship": "Mother",
+      "phone": "+82-10-8765-4321"
+    }
+  },
+  {
+    "worker_id": "WK005",
+    "legal_name": "刘洋",
+    "preferred_name": "Yang Liu",
+    "date_of_birth": "1997-01-18",
+    "gender": "Male",
+    "nationality": "Chinese",
+    "marital_status": "Single",
+    "phone": "+86-137-0005-0001",
+    "email": "yang.liu@example.com",
+    "address": {
+      "street": "200 Pudong Avenue",
+      "city": "Shanghai",
+      "province": "Shanghai",
+      "postal_code": "200120",
+      "country": "China"
+    },
+    "emergency_contact": {
+      "name": "刘芳 (Fang Liu)",
+      "relationship": "Mother",
+      "phone": "+86-137-0005-0002"
+    }
+  }
+]

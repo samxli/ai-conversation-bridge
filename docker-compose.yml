@@ -1,0 +1,31 @@
+# This file is for local container builds and testing only.
+# For end-to-end testing, deploy both services to a public-facing cloud
+# environment (e.g., Google Cloud Run) — see docs/setup-guide.md.
+
+services:
+  chat-connector:
+    build: ./chat-connector
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./chat-connector/.env
+    depends_on:
+      - mcp-demo-server
+    networks:
+      - bridge-net
+
+  mcp-demo-server:
+    build: ./mcp-demo-server
+    ports:
+      - "8090:8080"
+    env_file:
+      - ./mcp-demo-server/.env
+    networks:
+      - bridge-net
+
+networks:
+  bridge-net:
+    driver: bridge
+
+
+

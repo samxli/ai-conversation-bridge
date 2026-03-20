@@ -1,0 +1,80 @@
+[
+  {
+    "worker_id": "WK001",
+    "period": "2026-02",
+    "currency": "CNY",
+    "gross_pay": 35000,
+    "deductions": {
+      "income_tax": 4200,
+      "social_insurance": 3500,
+      "housing_fund": 2100
+    },
+    "net_pay": 25200,
+    "pay_date": "2026-02-28"
+  },
+  {
+    "worker_id": "WK001",
+    "period": "2026-01",
+    "currency": "CNY",
+    "gross_pay": 35000,
+    "deductions": {
+      "income_tax": 4200,
+      "social_insurance": 3500,
+      "housing_fund": 2100
+    },
+    "net_pay": 25200,
+    "pay_date": "2026-01-31"
+  },
+  {
+    "worker_id": "WK002",
+    "period": "2026-02",
+    "currency": "CNY",
+    "gross_pay": 40000,
+    "deductions": {
+      "income_tax": 5400,
+      "social_insurance": 4000,
+      "housing_fund": 2400
+    },
+    "net_pay": 28200,
+    "pay_date": "2026-02-28"
+  },
+  {
+    "worker_id": "WK003",
+    "period": "2026-02",
+    "currency": "JPY",
+    "gross_pay": 650000,
+    "deductions": {
+      "income_tax": 78000,
+      "health_insurance": 32500,
+      "pension": 59475
+    },
+    "net_pay": 480025,
+    "pay_date": "2026-02-25"
+  },
+  {
+    "worker_id": "WK004",
+    "period": "2026-02",
+    "currency": "KRW",
+    "gross_pay": 5500000,
+    "deductions": {
+      "income_tax": 440000,
+      "national_pension": 247500,
+      "health_insurance": 192500
+    },
+    "net_pay": 4620000,
+    "pay_date": "2026-02-25"
+  },
+  {
+    "worker_id": "WK005",
+    "period": "2026-02",
+    "currency": "CNY",
+    "gross_pay": 25000,
+    "deductions": {
+      "income_tax": 2200,
+      "social_insurance": 2500,
+      "housing_fund": 1500
+    },
+    "net_pay": 18800,
+    "pay_date": "2026-02-28"
+  }
+]

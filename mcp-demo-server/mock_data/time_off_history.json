@@ -1,0 +1,99 @@
+[
+  {
+    "worker_id": "WK001",
+    "history": [
+      {
+        "request_id": "TOR-WK001-2026-01-27",
+        "type": "vacation",
+        "start_date": "2026-01-27",
+        "end_date": "2026-01-29",
+        "days": 3,
+        "status": "approved",
+        "submitted_on": "2026-01-15"
+      }
+    ]
+  },
+  {
+    "worker_id": "WK002",
+    "history": [
+      {
+        "request_id": "TOR-WK002-2025-12-23",
+        "type": "vacation",
+        "start_date": "2025-12-23",
+        "end_date": "2025-12-27",
+        "days": 5,
+        "status": "approved",
+        "submitted_on": "2025-12-01"
+      }
+    ]
+  },
+  {
+    "worker_id": "WK003",
+    "history": [
+      {
+        "request_id": "TOR-WK003-2026-02-10",
+        "type": "vacation",
+        "start_date": "2026-02-10",
+        "end_date": "2026-02-11",
+        "days": 2,
+        "status": "approved",
+        "submitted_on": "2026-01-28"
+      }
+    ]
+  },
+  {
+    "worker_id": "WK004",
+    "history": [
+      {
+        "request_id": "TOR-WK004-2025-09-15",
+        "type": "vacation",
+        "start_date": "2025-09-15",
+        "end_date": "2025-09-19",
+        "days": 5,
+        "status": "approved",
+        "submitted_on": "2025-09-01"
+      },
+      {
+        "request_id": "TOR-WK004-2025-11-11",
+        "type": "sick",
+        "start_date": "2025-11-11",
+        "end_date": "2025-11-14",
+        "days": 4,
+        "status": "approved",
+        "submitted_on": "2025-11-11"
+      },
+      {
+        "request_id": "TOR-WK004-2026-01-20",
+        "type": "vacation",
+        "start_date": "2026-01-20",
+        "end_date": "2026-01-21",
+        "days": 2,
+        "status": "approved",
+        "submitted_on": "2026-01-10"
+      },
+      {
+        "request_id": "TOR-WK004-2026-03-24",
+        "type": "personal",
+        "start_date": "2026-03-24",
+        "end_date": "2026-03-25",
+        "days": 2,
+        "status": "pending_manager_approval",
+        "submitted_on": "2026-03-14"
+      }
+    ]
+  },
+  {
+    "worker_id": "WK005",
+    "history": [
+      {
+        "request_id": "TOR-WK005-2026-02-14",
+        "type": "vacation",
+        "start_date": "2026-02-14",
+        "end_date": "2026-02-14",
+        "days": 1,
+        "status": "approved",
+        "submitted_on": "2026-02-07"
+      }
+    ]
+  }
+]

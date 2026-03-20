@@ -1,0 +1,139 @@
+[
+  {
+    "worker_id": "WK001",
+    "eligible_types": [
+      {
+        "type": "Annual Leave",
+        "code": "vacation",
+        "days_per_year": 15,
+        "carryover_max": 5,
+        "requires_approval": true
+      },
+      {
+        "type": "Sick Leave",
+        "code": "sick",
+        "days_per_year": 10,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Personal Leave",
+        "code": "personal",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Marriage Leave",
+        "code": "marriage",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      }
+    ]
+  },
+  {
+    "worker_id": "WK002",
+    "eligible_types": [
+      {
+        "type": "Annual Leave",
+        "code": "vacation",
+        "days_per_year": 15,
+        "carryover_max": 5,
+        "requires_approval": true
+      },
+      {
+        "type": "Sick Leave",
+        "code": "sick",
+        "days_per_year": 10,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Personal Leave",
+        "code": "personal",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      }
+    ]
+  },
+  {
+    "worker_id": "WK003",
+    "eligible_types": [
+      {
+        "type": "Annual Leave",
+        "code": "vacation",
+        "days_per_year": 20,
+        "carryover_max": 10,
+        "requires_approval": true
+      },
+      {
+        "type": "Sick Leave",
+        "code": "sick",
+        "days_per_year": 10,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Personal Leave",
+        "code": "personal",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      }
+    ]
+  },
+  {
+    "worker_id": "WK004",
+    "eligible_types": [
+      {
+        "type": "Annual Leave",
+        "code": "vacation",
+        "days_per_year": 15,
+        "carryover_max": 5,
+        "requires_approval": true
+      },
+      {
+        "type": "Sick Leave",
+        "code": "sick",
+        "days_per_year": 10,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Personal Leave",
+        "code": "personal",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      }
+    ]
+  },
+  {
+    "worker_id": "WK005",
+    "eligible_types": [
+      {
+        "type": "Annual Leave",
+        "code": "vacation",
+        "days_per_year": 15,
+        "carryover_max": 5,
+        "requires_approval": true
+      },
+      {
+        "type": "Sick Leave",
+        "code": "sick",
+        "days_per_year": 10,
+        "carryover_max": 0,
+        "requires_approval": true
+      },
+      {
+        "type": "Personal Leave",
+        "code": "personal",
+        "days_per_year": 3,
+        "carryover_max": 0,
+        "requires_approval": true
+      }
+    ]
+  }
+]
