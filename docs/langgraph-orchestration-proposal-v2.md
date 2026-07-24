@@ -9,6 +9,8 @@
 | Scope    | Add LangGraph alongside Flowise and introduce a portable orchestration boundary |
 
 
+
+
 ## 1. Executive Summary
 
 The AI Conversation Bridge currently calls Flowise directly from a single deployed service. As the future of Flowise is uncertain, this proposal evolves that deployment into a more modular **Conversation Bridge Service** and adds **LangGraph as a second supported orchestrator**, while retaining customer-hosted Flowise as a valid option.
@@ -21,7 +23,11 @@ This proposal puts a spotlight on:
 2. The Orchestration Interface as the stable internal boundary.
 3. Modularizing the Conversation Bridge Service around Channel Adapters and the Orchestration Interface.
 
+
+
 ## 2. Scope and Non-Goals
+
+
 
 ### In scope
 
@@ -33,6 +39,8 @@ This proposal puts a spotlight on:
 - Allow the selected orchestrator to be changed through configuration.
 - Preserve the existing chat-platform, LLM, and Workday MCP relationships.
 
+
+
 ### Out of scope
 
 - Replacing or deprecating Flowise.
@@ -42,7 +50,11 @@ This proposal puts a spotlight on:
 - Additional orchestrator implementations or A2A remote-agent integration.
 - Production implementation.
 
+
+
 ## 3. Current and Proposed Architecture
+
+
 
 ### Current
 
@@ -60,6 +72,8 @@ Configuration selects one of two implementations:
 This is an additive change. Existing Flowise deployments do not need to migrate.
 
 ## 4. C4 Architecture Views
+
+
 
 ### C4 Level 1: System Context
 
@@ -82,6 +96,8 @@ flowchart TD
     flowise -->|"Tool calls"| mcp
     mcp -->|"Workday operations"| workday
 ```
+
+
 
 Only one orchestration path is selected for a deployment. Flowise remains external; LangGraph runs inside the Conversation Bridge Service.
 
@@ -114,25 +130,31 @@ flowchart TD
     mcp --> workday
 ```
 
-The Conversation Bridge Service is the single architecture boundary. Channel Adapters, the Orchestration Interface, the Flowise client, and the LangGraph reference implementation are modules inside it. External systems match the Level 1 view: Customer Chat Surface, Customer-Hosted Flowise, Customer-Selected LLM, Workday MCP, and Workday. A customer-hosted Flowise runtime is required only when Flowise is selected.
+
+
+The Conversation Bridge Service is the single architecture boundary. Channel Adapters, the Orchestration Interface, the Flowise client, and the LangGraph reference implementation are modules inside it. A customer-hosted Flowise runtime is required only when Flowise is selected.
 
 ## 5. Before-and-After Comparison
 
-| Dimension                             | Current architecture                            | Proposed architecture                           |
-| ------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
-| Supported orchestrator                | Flowise                                         | Flowise or LangGraph                            |
-| Deployed bridge component             | Conversation Bridge Service, Flowise-coupled    | Conversation Bridge Service, modular            |
-| Internal structure                    | Routes and mixed orchestration clients          | Channel Adapters and Orchestration Interface    |
-| Channel dependency                    | Flowise API shape                               | Neutral Orchestration Interface                 |
-| Runtime selection                     | Hard-coded orchestrator branch                  | Configuration through the orchestration factory |
-| Flowise support                       | Primary path                                    | Retained as a supported path                    |
-| Flowise runtime code                  | External                                        | External; client and flow template only         |
-| LangGraph support                     | Not supported in this repository                | Bundled reference implementation                |
-| LLM integration                       | Owned by Flowise                                | Owned by the selected orchestrator              |
-| MCP integration                       | Owned by Flowise                                | Owned by the selected orchestrator              |
-| Agent definition                      | Flowise flow                                    | Flowise flow or LangGraph graph                 |
-| Core architecture boundary            | Conversation Bridge Service                     | Conversation Bridge Service                     |
-| Adding another orchestrator           | Modify route or client logic                    | Add another Orchestration Interface implementation |
+
+| Dimension                   | Current architecture                         | Proposed architecture                              |
+| --------------------------- | -------------------------------------------- | -------------------------------------------------- |
+| Supported orchestrator      | Flowise                                      | Flowise or LangGraph                               |
+| Deployed bridge component   | Conversation Bridge Service, Flowise-coupled | Conversation Bridge Service, modular               |
+| Internal structure          | Routes and mixed orchestration clients       | Channel Adapters and Orchestration Interface       |
+| Channel dependency          | Flowise API shape                            | Neutral Orchestration Interface                    |
+| Runtime selection           | Hard-coded orchestrator branch               | Configuration through the orchestration factory    |
+| Flowise support             | Primary path                                 | Retained as a supported path                       |
+| Flowise runtime code        | External                                     | External; client and flow template only            |
+| LangGraph support           | Not supported in this repository             | Bundled reference implementation                   |
+| LLM integration             | Owned by Flowise                             | Owned by the selected orchestrator                 |
+| MCP integration             | Owned by Flowise                             | Owned by the selected orchestrator                 |
+| Agent definition            | Flowise flow                                 | Flowise flow or LangGraph graph                    |
+| Core architecture boundary  | Conversation Bridge Service                  | Conversation Bridge Service                        |
+| Adding another orchestrator | Modify route or client logic                 | Add another Orchestration Interface implementation |
+
+
+
 
 ## 6. Orchestration Interface
 
@@ -149,6 +171,7 @@ Every orchestrator returns:
 
 Streaming may be defined as an optional capability, but it is not required for initial compatibility. Runtime-specific details remain inside each implementation:
 
+
 | Concern               | Flowise implementation           | LangGraph implementation               |
 | --------------------- | -------------------------------- | -------------------------------------- |
 | Repository code       | Flowise client and flow template | Reference graph and execution code     |
@@ -158,6 +181,7 @@ Streaming may be defined as an optional capability, but it is not required for i
 | Response parsing      | Flowise response fields          | LangGraph final graph state            |
 | Runtime configuration | Flowise flow                     | LangGraph graph definition             |
 | Model and tools       | Configured in Flowise            | Configured in the LangGraph runtime    |
+
 
 Portability in this proposal means **caller portability**: Channel Adapters do not change when the orchestrator changes. It does not mean that Flowise flow definitions and LangGraph graph definitions are interchangeable.
 
@@ -177,6 +201,8 @@ Neither option is positioned as universally better:
 
 - Choose **Flowise** when visual authoring and rapid configuration are the priority.
 - Choose **LangGraph** when code-level control and customization are the priority.
+
+
 
 ## 8. Proposed Repository Structure
 
@@ -205,9 +231,11 @@ bridge-service/
 └── main.py
 ```
 
-The existing `flowise/` template directory remains separate. `mcp-demo-server/` remains sample demo tooling outside the bridge architecture. The current service directory is renamed to `bridge-service/` and reorganized around Channel Adapters and the Orchestration Interface.
+The existing `flowise/` template directory remains separate. `mcp-demo-server/` remains sample demo tooling outside the bridge architecture. The current `chat-connector/` directory is renamed to `bridge-service/` and reorganized around Channel Adapters and the Orchestration Interface.
 
 ## 9. Business Value and Tradeoffs
+
+
 
 ### Business value
 
@@ -216,7 +244,8 @@ The existing `flowise/` template directory remains separate. `mcp-demo-server/` 
 - Gives customers a LangGraph path without forcing existing Flowise users to migrate.
 - Reduces the cost of adding future orchestrators because Channel Adapters depend on one stable interface.
 - Keeps Workday MCP available through either orchestration choice.
-- Avoids another deployed service and network hop.
+
+
 
 ### Tradeoffs
 
@@ -236,6 +265,8 @@ The bundled LangGraph implementation or another capable orchestrator could also 
 These are extension points, not requirements for the current LangGraph proposal. MCP remains the reference mechanism for calling specific Workday tools; A2A would support higher-level task delegation to another agent.
 
 ## 11. Focused FAQ
+
+
 
 ### Is Flowise being replaced?
 
