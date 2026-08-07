@@ -1,8 +1,5 @@
-"""LINE WORKS bot API client for webhook verification and outbound messages."""
+"""LINE WORKS bot API client for OAuth and outbound messages."""
 
-import base64
-import hashlib
-import hmac
 import logging
 from datetime import datetime
 
@@ -13,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class LineWorksClient:
-    """Client for LINE WORKS OAuth, webhook verification, and bot messaging."""
+    """Client for LINE WORKS OAuth and bot messaging."""
 
     def __init__(self, config):
         """Initialize credentials and normalize PEM private key formatting."""
@@ -59,28 +56,6 @@ class LineWorksClient:
             self.private_key,
             self.bot_id
         ])
-
-    def verify_signature(self, request_body: bytes, signature: str) -> bool:
-        """Verify LINE WORKS webhook signature (HMAC-SHA256 with Bot Secret).
-
-        Returns True if verification passes or if bot_secret is not configured
-        (to preserve backward compatibility for development setups).
-        """
-        if not self.bot_secret:
-            logger.warning(
-                "LW_API_20_BOT_SECRET not set — skipping webhook signature verification. "
-                "This is insecure; set the Bot Secret for production deployments."
-            )
-            return True
-
-        expected = hmac.new(
-            self.bot_secret.encode("utf-8"),
-            request_body,
-            hashlib.sha256
-        ).digest()
-        expected_b64 = base64.b64encode(expected).decode("utf-8")
-
-        return hmac.compare_digest(expected_b64, signature)
 
     def _get_jwt(self):
         """Build a signed JWT for LINE WORKS OAuth token exchange."""

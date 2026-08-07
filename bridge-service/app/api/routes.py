@@ -5,34 +5,10 @@ import logging
 from flask import Blueprint, current_app, jsonify, request
 
 from app.config import Config
-from app.response_validator import ResponseValidator
-from app.services.dingtalk import DingTalkClient
-from app.services.flowise import FlowiseClient
-from app.services.lineworks import LineWorksClient
-from app.services.openrouter import OpenRouterClient
+from app.core.response_validator import ResponseValidator
 
 bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
-
-lw_client = LineWorksClient(Config)
-dingtalk_client = DingTalkClient(Config)
-
-if Config.AI_PROVIDER == 'openrouter':
-    logger.info("Using OpenRouter as chat provider (demo/experiment)")
-    ai_client = OpenRouterClient(
-        Config.OPENROUTER_API_KEY,
-        Config.OPENROUTER_MODEL,
-        Config.OPENROUTER_API_URL,
-        Config.OPENROUTER_SYSTEM_PROMPT,
-        Config.OPENROUTER_REASONING_EFFORT
-    )
-else:
-    logger.info("Using Flowise as chat provider")
-    ai_client = FlowiseClient(
-        Config.FLOWISE_API_URL,
-        Config.FLOWISE_API_KEY,
-        Config.FLOWISE_TIMEOUT
-    )
 
 
 @bp.route('/')
@@ -47,6 +23,7 @@ def health():
 
 def get_ai_response(user_text: str, session_id: str) -> str:
     """Call the configured AI provider and validate the response."""
+    ai_client = current_app.extensions['ai_client']
     ai_response_text = ai_client.get_completion(user_text, user_id=session_id)
     return ResponseValidator.validate(
         str(ai_response_text) if ai_response_text else "",
@@ -64,10 +41,13 @@ def message_too_long_response() -> str:
 def lineworks_callback():
     """Handle LINE WORKS message callbacks."""
     try:
+        lw_client = current_app.extensions['lw_client']
+        lineworks_adapter = current_app.extensions['lineworks_adapter']
+
         raw_body = request.get_data()
         signature = request.headers.get("X-WORKS-Signature", "")
 
-        if not lw_client.verify_signature(raw_body, signature):
+        if not lineworks_adapter.verify_signature(raw_body, signature):
             current_app.logger.warning("Webhook signature verification failed")
             return 'Unauthorized', 401
 
@@ -76,32 +56,16 @@ def lineworks_callback():
             current_app.logger.warning("Invalid or empty JSON body")
             return 'Bad Request', 400
 
-        current_app.logger.info(f"Received callback from user: {data.get('source', {}).get('userId', 'unknown')}")
+        current_app.logger.info(
+            f"Received callback from user: {data.get('source', {}).get('userId', 'unknown')}"
+        )
 
-        if not data or data.get('type') != 'message':
+        message = lineworks_adapter.parse_inbound(data)
+        if message is None:
             return 'OK', 200
 
-        source = data.get('source')
-        user_id = source.get('userId') if source else None
-
-        content_payload = data.get('content', {})
-        message_type = content_payload.get('type')
-        user_text = content_payload.get('text')
-
-        if not user_id:
-            current_app.logger.warning("No userId found in source")
-            return 'OK', 200
-
-        if message_type != 'text' or not user_text:
-            current_app.logger.info("Received non-text message or empty text.")
-            return 'OK', 200
-
-        user_text = user_text.strip()
-        if len(user_text) > Config.MAX_MESSAGE_LENGTH:
-            current_app.logger.warning(
-                f"Message from {user_id} exceeds max length ({len(user_text)} > {Config.MAX_MESSAGE_LENGTH})"
-            )
-            lw_client.send_message(user_id, {
+        if lineworks_adapter.is_over_length(message):
+            lw_client.send_message(message.reply_target, {
                 "content": {
                     "type": "text",
                     "text": message_too_long_response()
@@ -113,7 +77,7 @@ def lineworks_callback():
             current_app.logger.error("Missing one or more LINE WORKS environment variables.")
             return 'Internal Server Error', 500
 
-        ai_response_text = get_ai_response(user_text, session_id=f"lineworks:{user_id}")
+        ai_response_text = get_ai_response(message.text, session_id=message.session_id)
 
         reply_content = {
             "content": {
@@ -122,8 +86,8 @@ def lineworks_callback():
             }
         }
 
-        lw_client.send_message(user_id, reply_content)
-        current_app.logger.info(f"Sent reply to user {user_id}")
+        lw_client.send_message(message.reply_target, reply_content)
+        current_app.logger.info(f"Sent reply to user {message.sender_id}")
 
         return 'OK', 200
 
@@ -136,31 +100,34 @@ def lineworks_callback():
 def dingtalk_callback():
     """Handle DingTalk HTTP-mode robot callbacks."""
     try:
+        dingtalk_client = current_app.extensions['dingtalk_client']
+        dingtalk_adapter = current_app.extensions['dingtalk_adapter']
+
         data = request.get_json(silent=True)
         if data is None:
             current_app.logger.warning("Invalid or empty DingTalk JSON body")
             return 'Bad Request', 400
 
-        message = dingtalk_client.parse_message(data)
+        message = dingtalk_adapter.parse_inbound(data)
         if message is None:
             return 'OK', 200
 
-        should_process, reason = dingtalk_client.should_process(message)
+        should_process, reason = dingtalk_adapter.should_process_payload(message, data)
         if not should_process:
             current_app.logger.info(reason)
             return 'OK', 200
 
-        if len(message.text) > Config.MAX_MESSAGE_LENGTH:
+        if dingtalk_adapter.is_over_length(message):
             current_app.logger.warning(
-                f"DingTalk message from {message.sender_user_id} exceeds max length "
+                f"DingTalk message from {message.sender_id} exceeds max length "
                 f"({len(message.text)} > {Config.MAX_MESSAGE_LENGTH})"
             )
-            dingtalk_client.send_text(message.session_webhook, message_too_long_response())
+            dingtalk_client.send_text(message.reply_target, message_too_long_response())
             return 'OK', 200
 
         ai_response_text = get_ai_response(message.text, session_id=message.session_id)
-        dingtalk_client.send_text(message.session_webhook, ai_response_text)
-        current_app.logger.info(f"Sent DingTalk reply to user {message.sender_user_id}")
+        dingtalk_client.send_text(message.reply_target, ai_response_text)
+        current_app.logger.info(f"Sent DingTalk reply to user {message.sender_id}")
 
         return 'OK', 200
 

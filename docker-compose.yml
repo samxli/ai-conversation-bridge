@@ -3,12 +3,12 @@
 # environment (e.g., Google Cloud Run) — see docs/setup-guide.md.
 
 services:
-  chat-connector:
-    build: ./chat-connector
+  bridge-service:
+    build: ./bridge-service
     ports:
       - "8080:8080"
     env_file:
-      - ./chat-connector/.env
+      - ./bridge-service/.env
     depends_on:
       - mcp-demo-server
     networks:
@@ -26,6 +26,3 @@ services:
 networks:
   bridge-net:
     driver: bridge
-
-
-
