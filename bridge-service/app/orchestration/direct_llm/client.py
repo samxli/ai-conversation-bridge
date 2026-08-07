@@ -1,4 +1,8 @@
-"""OpenRouter chat-completions client for demo and experiment use."""
+"""Direct LLM (OpenRouter) chat-completions client for demo and experiment use.
+
+Process-local per-session history is demo-grade: it does not survive process
+restarts and is not shared across multiple Gunicorn workers.
+"""
 
 import logging
 import time
@@ -6,14 +10,17 @@ from datetime import datetime
 
 import httpx
 
+from app.orchestration.base import OrchestrationRequest, OrchestrationResult
+from app.orchestration.errors import FailureCode
+
 logger = logging.getLogger(__name__)
 
 
 class OpenRouterClient:
-    """Demo/experiment chat provider via OpenRouter API."""
+    """Demo/experiment chat orchestrator via an OpenAI-compatible HTTP API."""
 
     def __init__(self, api_key, model, api_url, system_prompt=None, reasoning_effort=None):
-        """Store OpenRouter credentials, model selection, and in-memory history settings."""
+        """Store credentials, model selection, and in-memory history settings."""
         self.api_key = api_key
         self.model = model
         self.api_url = api_url
@@ -22,6 +29,11 @@ class OpenRouterClient:
 
         self.chat_history = {}
         self.history_limit = 10
+        self._client = httpx.AsyncClient(timeout=120.0)
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP client."""
+        await self._client.aclose()
 
     def _get_user_history(self, user_id):
         """Return the in-memory chat history list for a user, creating it if needed."""
@@ -46,11 +58,15 @@ class OpenRouterClient:
             return f"{self.base_system_prompt}\n{date_prompt}"
         return date_prompt
 
-    def get_completion(self, user_message, user_id=None):
-        """Send a chat completion request to OpenRouter and return the assistant reply."""
+    async def invoke(self, request: OrchestrationRequest) -> OrchestrationResult:
+        """Send a chat completion request and return text or a typed failure."""
         if not self.api_key:
-            logger.error("OPENROUTER_API_KEY not set.")
-            return "I am currently unable to think (API Key missing)."
+            logger.error("OPENROUTER_API_KEY / LLM_API_KEY not set.")
+            return OrchestrationResult(
+                text=None,
+                failure=FailureCode.CONFIGURATION,
+                detail="LLM API key not set",
+            )
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -58,12 +74,13 @@ class OpenRouterClient:
         }
 
         messages = [{"role": "system", "content": self._get_dynamic_system_prompt()}]
+        user_id = request.session_id
 
         if user_id:
-            self._append_to_history(user_id, "user", user_message)
+            self._append_to_history(user_id, "user", request.message)
             messages.extend(self._get_user_history(user_id))
         else:
-            messages.append({"role": "user", "content": user_message})
+            messages.append({"role": "user", "content": request.message})
 
         payload = {"model": self.model, "messages": messages}
 
@@ -72,7 +89,7 @@ class OpenRouterClient:
 
         t0 = time.time()
         try:
-            response = httpx.post(self.api_url, headers=headers, json=payload, timeout=120.0)
+            response = await self._client.post(self.api_url, headers=headers, json=payload)
             elapsed = time.time() - t0
             response.raise_for_status()
             data = response.json()
@@ -84,29 +101,33 @@ class OpenRouterClient:
                 if user_id:
                     self._append_to_history(user_id, "assistant", ai_text)
                 logger.info(f"OpenRouter responded in {elapsed:.1f}s")
-                return ai_text
-            else:
-                logger.error(f"Unexpected OpenRouter response format: {data}")
-                return "I'm not sure how to respond to that."
+                return OrchestrationResult(text=ai_text)
+
+            detail = f"Unexpected OpenRouter response format: {data}"
+            logger.error(detail)
+            return OrchestrationResult(
+                text=None, failure=FailureCode.UNAVAILABLE, detail=detail
+            )
 
         except httpx.TimeoutException as e:
             elapsed = time.time() - t0
-            logger.error(f"OpenRouter timeout after {elapsed:.1f}s: {e}")
-            return (
-                "Sorry, the AI service is taking longer than expected. "
-                "Please try again in a moment."
-            )
+            detail = f"OpenRouter timeout after {elapsed:.1f}s: {e}"
+            logger.error(detail)
+            return OrchestrationResult(text=None, failure=FailureCode.TIMEOUT, detail=detail)
         except httpx.HTTPStatusError as e:
             elapsed = time.time() - t0
             status = e.response.status_code
-            logger.error(f"OpenRouter HTTP {status} after {elapsed:.1f}s: {e}")
+            detail = f"OpenRouter HTTP {status} after {elapsed:.1f}s: {e}"
+            logger.error(detail)
             if status == 429:
-                return (
-                    "The AI model is temporarily rate-limited. "
-                    "Please wait a moment and try again."
+                return OrchestrationResult(
+                    text=None, failure=FailureCode.RATE_LIMITED, detail=detail
                 )
-            return "Sorry, the AI service returned an error. Please try again later."
+            return OrchestrationResult(
+                text=None, failure=FailureCode.UPSTREAM_ERROR, detail=detail
+            )
         except Exception as e:
             elapsed = time.time() - t0
-            logger.error(f"OpenRouter call failed after {elapsed:.1f}s ({type(e).__name__}): {e}")
-            return "Sorry, I encountered an error while processing your request."
+            detail = f"OpenRouter call failed after {elapsed:.1f}s ({type(e).__name__}): {e}"
+            logger.error(detail)
+            return OrchestrationResult(text=None, failure=FailureCode.UNAVAILABLE, detail=detail)

@@ -5,7 +5,10 @@ import logging
 from flask import Blueprint, current_app, jsonify, request
 
 from app.config import Config
+from app.core import async_runner
+from app.core.messages import user_message_for
 from app.core.response_validator import ResponseValidator
+from app.orchestration.base import OrchestrationRequest
 
 bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -22,12 +25,24 @@ def health():
 
 
 def get_ai_response(user_text: str, session_id: str) -> str:
-    """Call the configured AI provider and validate the response."""
-    ai_client = current_app.extensions['ai_client']
-    ai_response_text = ai_client.get_completion(user_text, user_id=session_id)
+    """Invoke the configured orchestrator and validate the response."""
+    orchestrator = current_app.extensions['orchestrator']
+    timeout = float(current_app.extensions.get('orchestrator_timeout', Config.FLOWISE_TIMEOUT))
+    result = async_runner.run_coroutine(
+        orchestrator.invoke(OrchestrationRequest(message=user_text, session_id=session_id)),
+        timeout=timeout + 30.0,
+    )
+    if result.failure is not None:
+        logger.error(
+            "Orchestration failure code=%s detail=%s",
+            result.failure.value,
+            result.detail,
+        )
+        return user_message_for(result.failure)
+
     return ResponseValidator.validate(
-        str(ai_response_text) if ai_response_text else "",
-        user_message=user_text
+        str(result.text) if result.text else "",
+        user_message=user_text,
     )
 
 
