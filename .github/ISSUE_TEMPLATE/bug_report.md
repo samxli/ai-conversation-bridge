@@ -10,7 +10,7 @@ assignees: ''
 A clear description of what the bug is.
 
 ## Component
-- [ ] Chat Connector
+- [ ] Bridge service
 - [ ] Flowise Flow
 - [ ] Demo MCP Server
 - [ ] Documentation

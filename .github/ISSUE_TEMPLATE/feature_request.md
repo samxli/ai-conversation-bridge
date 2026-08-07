@@ -13,7 +13,7 @@ A description of the problem or need this feature addresses.
 A description of what you'd like to happen.
 
 ## Component
-- [ ] Chat Connector (new platform, adapter improvement)
+- [ ] Bridge service (new platform, adapter improvement)
 - [ ] Flowise Flow (new flow template, node configuration)
 - [ ] Demo MCP Server (new tool, mock data)
 - [ ] Documentation

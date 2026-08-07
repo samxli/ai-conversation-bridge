@@ -22,8 +22,8 @@ Also verbatim:
 | Category | Examples |
 |---|---|
 | Tool names | `get_current_user_time_off_balance`, `find_employee_id_by_name` |
-| Environment variables | `AI_PROVIDER`, `FLOWISE_API_URL`, `CHAT_PROVIDER` |
-| Paths and filenames | `chat-connector/`, `flowise/flows/`, `.env.example` |
+| Environment variables | `ORCHESTRATOR`, `FLOWISE_API_URL`, `LLM_API_KEY`, `MCP_SERVER_URL` (legacy aliases: `AI_PROVIDER`, `CHAT_PROVIDER`) |
+| Paths and filenames | `bridge-service/`, `flowise/flows/`, `.env.example` |
 | Routes | `/lineworks/callback`, `/dingtalk/callback` |
 | Session id formats | `lineworks:<userId>`, `dingtalk:<conversationId>:<senderStaffId>` |
 | Shell commands, URLs, JSON payloads | `gcloud run deploy …`, `{ vacation: { available: 12, used: 3 } }` |
@@ -74,7 +74,7 @@ Korean uses ASCII `()` for parentheticals, not full-width `（）`. The "full-wi
 | architecture | 架构 | 架構 | アーキテクチャ | 아키텍처 |
 | reference architecture | 参考架构 | 參考架構 | リファレンスアーキテクチャ | 참조 아키텍처 |
 | orchestration | 编排 | 編排 | オーケストレーション | 오케스트레이션 |
-| chat connector | 聊天连接器 | 聊天連接器 | チャットコネクター | 채팅 커넥터 |
+| bridge service | 桥接服务 | 橋接服務 | ブリッジサービス | 브릿지 서비스 |
 | adapter | 适配器 | 適配器 | アダプター | 어댑터 |
 | webhook adapter | Webhook 适配器 | Webhook 適配器 | Webhookアダプター | Webhook 어댑터 |
 | system of action | 执行系统 | 執行系統 | 実行システム | 실행 시스템 |
@@ -195,7 +195,7 @@ The full-width punctuation and Latin–Han spacing rules below are **Chinese-onl
 
 - **Register:** body sentences use 합니다체 (`입니다` / `합니다`). Imperatives and short callout questions use the conventional developer-doc forms `~하세요` and `~시나요?` / `~신가요?` — do **not** convert those to `~하십시오` / `~십니까?`, which mixes registers inside the same callout and reads stiffer than this document's voice. Never use 한다체. The Chinese `您` rule has no Korean equivalent; Korean handles deference through verb endings, so **avoid 당신** entirely (it reads as confrontational) — drop the second-person pronoun rather than translating it.
 - **Punctuation:** ASCII half-width `.` `,` `()` `:` — never full-width `。` `，` `（）` `：`, and never Japanese/Chinese corner quotes `「」` / `『』`. Use ASCII `"…"` for quotations. Separate list items with `,` or `·`, not `、`. Do not "fix" Korean punctuation into full-width to match the Chinese columns.
-- **Spacing (띄어쓰기):** standard Korean rules; a space between Hangul and adjacent Latin tokens is normal (`Flowise 플로우`, `MCP 서버`), not a special typographic rule. Before `(`: no space when the parenthesis glosses or renames the preceding word (`KakaoTalk(카카오톡)`, `개인 정보(주소)`); one space when it is a separate aside (`채팅 커넥터 (chat-connector/)`, `Cloud Run (또는 …)`).
+- **Spacing (띄어쓰기):** standard Korean rules; a space between Hangul and adjacent Latin tokens is normal (`Flowise 플로우`, `MCP 서버`), not a special typographic rule. Before `(`: no space when the parenthesis glosses or renames the preceding word (`KakaoTalk(카카오톡)`, `개인 정보(주소)`); one space when it is a separate aside (`브릿지 서비스 (bridge-service/)`, `Cloud Run (또는 …)`).
 - **Loanword vs native-Sino:** prefer established loan forms where natural — 서버 not 봉사기; 엔드포인트 not 종점; 오케스트레이션. Use Sino-Korean where it is the settled technical term — 배포, 인증, 감사 로그. Pin each choice in the `ko` column.
 - **Particles after Latin words:** choose by the *Korean pronunciation* of the preceding word, not its spelling. Never write dual forms like `은(는)` in prose — pick one. See the particle table below.
 - Preserve the source's `**bold**`, especially on load-bearing warnings.

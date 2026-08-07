@@ -2,7 +2,7 @@
 
 | Field      | Value                                                                           |
 | ---------- | ------------------------------------------------------------------------------- |
-| Status     | Proposed                                                                        |
+| Status     | Implemented in v0.2.0                                                           |
 | Audience   | Architecture Review Panel                                                       |
 | Date       | 2026-08-07                                                                      |
 | Supersedes | v2 (2026-07-23)                                                                 |

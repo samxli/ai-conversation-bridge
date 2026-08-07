@@ -1,11 +1,16 @@
 # Implementation Plan: LangGraph Orchestration (Proposal v2.1)
 
+> **Historical record.** This plan described the work that shipped in v0.2.0 on
+> `feat/langgraph-orchestration`. Do not treat it as an open backlog; see
+> [`langgraph-orchestration-proposal-v2.md`](langgraph-orchestration-proposal-v2.md)
+> (Status: Implemented in v0.2.0) and [CHANGELOG.md](../CHANGELOG.md).
+
 | Field           | Value                                                                 |
 | --------------- | --------------------------------------------------------------------- |
 | Source of truth | [`docs/langgraph-orchestration-proposal-v2.md`](langgraph-orchestration-proposal-v2.md) (v2.1) |
 | Repository      | Personal fork `samxli/ai-conversation-bridge`; `origin` is the fork, `upstream` is Workday |
-| Target branch   | `docs/langgraph-orchestration-proposal-v2` or a new branch off it     |
-| Audience        | Implementing agent                                                    |
+| Target branch   | `feat/langgraph-orchestration` (landed)                               |
+| Audience        | Implementing agent (historical)                                       |
 
 ## 0. How to use this plan
 

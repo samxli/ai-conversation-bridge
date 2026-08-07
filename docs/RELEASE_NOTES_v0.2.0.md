@@ -1,6 +1,7 @@
 # Release notes: v0.2.0 (bridge-service + LangGraph)
 
-Draft notes for the first release after the Orchestration Interface work.
+Migration checklist for the first release after the Orchestration Interface work.
+Canonical change list: [CHANGELOG.md](../CHANGELOG.md) (`[Unreleased] — 0.2.0`).
 
 ## Breaking changes
 
@@ -8,6 +9,7 @@ Draft notes for the first release after the Orchestration Interface work.
 2. **Cloud Run service name:** deploy script now deploys `bridge-service`. The public URL changes.
 3. **Callback URLs:** re-point LINE WORKS and DingTalk webhooks to the new `bridge-service` URL (`/lineworks/callback`, `/dingtalk/callback`).
 4. **Config:** prefer `ORCHESTRATOR` (`flowise` | `langgraph` | `direct_llm`). Legacy `AI_PROVIDER` / `CHAT_PROVIDER` and `OPENROUTER_*` remain aliases for one release.
+5. **Single-instance pin (LangGraph):** with `STATE_BACKEND=memory`, keep `--min-instances=1 --max-instances=1` (see `scripts/deploy-cloud-run.sh`). Multiple replicas fragment in-memory conversation state.
 
 ## Migration checklist
 

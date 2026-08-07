@@ -2,7 +2,7 @@
 Brief description of the changes.
 
 ## Component(s) Changed
-- [ ] Chat Connector
+- [ ] Bridge service
 - [ ] Flowise Flow
 - [ ] Demo MCP Server
 - [ ] Documentation

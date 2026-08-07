@@ -27,6 +27,16 @@ The `mcp-demo-server/` in this repo is a mock with static JSON data and no authe
 
 Self-hosting Flowise works for prototyping, but [Flowise Cloud Enterprise](https://flowiseai.com/) offers SSO, role-based access control, audit trails, encryption at rest, and SLA-backed uptime — a significantly stronger posture for regulated industries. For countries with stricter data residency requirements (e.g., China, certain ASEAN markets), self-hosting Flowise in-region remains a valid production approach.
 
+### Conversation-state retention and erasure
+
+On the Flowise path, conversation memory lives in the customer's Flowise instance — apply that product's retention controls.
+
+On the LangGraph path with `STATE_BACKEND=memory`, the bridge checkpointer keeps thread state **in process memory** for the life of the instance. That state includes user messages and tool results, which can contain HR data (leave balances, personal information, worker IDs). Treat it as regulated data:
+
+- Define retention (how long threads may live) and an erasure path (user/admin request, offboarding).
+- Expect cold starts and redeploys to wipe in-memory state; do not rely on that as the only deletion mechanism.
+- Before scaling beyond one instance or claiming durable memory, move to a shared encrypted store with TTL, deletion APIs, and region-local placement — the in-memory backend is a reference, not an enterprise retention story.
+
 ---
 
 ## P1 — High Priority

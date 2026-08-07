@@ -39,18 +39,21 @@ While we built this with APJ in mind, the pattern works anywhere you want to use
 ## Architecture
 
 ```text
-Chat App  ←→  bridge service  ←→  Flowise (the bridge)  ←→  MCP Server  ←→  Workday
+Chat App  ←→  bridge service  ←→  orchestrator  ←→  MCP Server  ←→  Workday
+                                    │
+                    Flowise (external) or LangGraph (in-process)
 ```
 
-The project has three main pieces. **Flowise is the brain** — it connects to the LLMs, figures out what the user wants, and calls Workday tools via MCP. The other two components act as its ears and hands: the bridge service listens to the chat apps, and the MCP Server executes actions in Workday.
+The project has three main pieces. **The selected orchestrator is the brain** — it connects to the LLMs, figures out what the user wants, and calls Workday tools via MCP. The other two components act as its ears and hands: the bridge service listens to the chat apps, and the MCP Server executes actions in Workday.
 
 *(For more details on boundaries and intended usage, check out [docs/architecture.md](docs/architecture.md).)*
 
 
 | Component           | What it does                                                                                   | Where it lives                         |
 | ------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **Flowise Flows**   | Handles LLM orchestration, intent recognition, and MCP tool calling.                           | [flowise/](flowise/)                 |
-| **bridge service**  | A two-way adapter that receives messages from chat platforms and sends the AI's responses back.| [bridge-service/](bridge-service/)   |
+| **bridge service**  | Channel adapters plus orchestrator selection; receives messages and sends replies.             | [bridge-service/](bridge-service/)   |
+| **Flowise Flows**   | Visual orchestration when `ORCHESTRATOR=flowise` — LLM, intent, and MCP tool calling.          | [flowise/](flowise/)                 |
+| **LangGraph**       | Bundled in-process ReAct agent when `ORCHESTRATOR=langgraph` — MCP from the bridge.            | [bridge-service/](bridge-service/)   |
 | **Demo MCP Server** | Mock Workday tools for testing and development. (Swap this out for the Workday Agent Gateway in production). | [mcp-demo-server/](mcp-demo-server/) |
 
 
@@ -59,8 +62,11 @@ The project has three main pieces. **Flowise is the brain** — it connects to t
 ### What you'll need
 
 - A container hosting platform with public HTTPS endpoints (like [Google Cloud Run](https://cloud.google.com/run))
-- A [Flowise](https://flowiseai.com/) instance (cloud or self-hosted, as long as it's public-facing)
 - LINE WORKS Bot credentials and/or DingTalk robot access (for the bridge service)
+- Depending on orchestrator:
+  - **Flowise** (`ORCHESTRATOR=flowise`, default): a [Flowise](https://flowiseai.com/) instance (cloud or self-hosted, public-facing)
+  - **LangGraph** (`ORCHESTRATOR=langgraph`): an OpenAI-compatible LLM API key and a reachable MCP server URL
+  - **Direct LLM** (`ORCHESTRATOR=direct_llm`): an OpenAI-compatible / OpenRouter API key (demos without tools)
 
 *Note: Everything needs to be deployed to a public-facing cloud environment. We use Google Cloud Run in these examples, but any container platform works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).*
 
@@ -78,9 +84,11 @@ gcloud run deploy mcp-demo-server \
   --source mcp-demo-server
 ```
 
-> **Going to production?** Replace this demo server with **Workday's official MCP endpoints** via Agent Gateway for real enterprise-grade security and authentication. Don't forget to update the MCP configuration in your Flowise flow!
+> **Going to production?** Replace this demo server with **Workday's official MCP endpoints** via Agent Gateway for real enterprise-grade security and authentication. On the Flowise path, update the MCP URL in your flow; on the LangGraph path, set `MCP_SERVER_URL` on the bridge.
 
-### 3. Import the Flowise flow
+### 3. Configure the orchestrator (Flowise path)
+
+Skip this step if you use `ORCHESTRATOR=langgraph` or `direct_llm` — see [Orchestrators](#orchestrators) and [Setup Guide](docs/setup-guide.md).
 
 1. Open your Flowise instance.
 2. Go to **Agent Flows** → **Add New** → **Settings** (⚙️) → **Load Agentflow**.
@@ -97,7 +105,7 @@ gcloud run deploy bridge-service \
   --source bridge-service
 ```
 
-> **Important:** Don't forget to set your environment variables in the Cloud Run console after deploying! You will need to configure your AI provider (like `AI_PROVIDER` and `FLOWISE_API_URL`) as well as any chat channel settings. See `bridge-service/.env.example` for the full list of variables.
+> **Important:** Set environment variables in the Cloud Run console after deploying. Prefer `ORCHESTRATOR` (`flowise` | `langgraph` | `direct_llm`) plus the matching credentials — for Flowise, `FLOWISE_API_URL`; for LangGraph, `LLM_API_KEY` and `MCP_SERVER_URL`. Also set chat channel settings. See `bridge-service/.env.example`. For LangGraph with `STATE_BACKEND=memory`, pin to a single instance (`--min-instances=1 --max-instances=1`); the reference [deploy script](scripts/deploy-cloud-run.sh) already does this.
 
 ### 5. Connect Chat Channels
 
@@ -169,6 +177,7 @@ ai-conversation-bridge/
 - [Architecture](docs/architecture.md) — Detailed system design and request flow
 - [Setup Guide](docs/setup-guide.md) — Step-by-step setup for each component
 - [Enterprise Hardening Guide](docs/enterprise-guide.md) — Security, reliability, and operational recommendations for production
+- [Release notes v0.2.0](docs/RELEASE_NOTES_v0.2.0.md) — Migration checklist (canonical list in [Changelog](CHANGELOG.md))
 - [Flowise Configuration](flowise/README.md) — How to import and configure the flow templates
 - [Contributing](CONTRIBUTING.md) — How to contribute to this project
 - [Changelog](CHANGELOG.md) — Tagged releases (`v0.x`; reference architecture, no stability promise)

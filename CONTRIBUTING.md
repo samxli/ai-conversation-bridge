@@ -42,7 +42,7 @@ docker compose build         # verify Dockerfiles
 docker compose up --build    # run locally for log inspection / MCP testing
 ```
 
-> **Tip:** To test the bridge service without Flowise, set `AI_PROVIDER=openrouter` and provide an `OPENROUTER_API_KEY`. This connects the webhook flow directly to an LLM. `CHAT_PROVIDER` is still accepted as a backwards-compatible fallback.
+> **Tip:** To test the bridge service without Flowise, set `ORCHESTRATOR=direct_llm` and provide an `LLM_API_KEY` (legacy `AI_PROVIDER=openrouter` / `OPENROUTER_API_KEY` still work as aliases). This connects the webhook flow directly to an LLM without MCP tools.
 
 ## Making Changes
 
