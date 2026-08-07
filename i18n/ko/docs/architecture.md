@@ -68,7 +68,7 @@ AI Conversation Bridge는 AI 기반 오케스트레이션으로 기업용 메시
 
 ## 구성 요소 상세
 
-### 채팅 커넥터 (`chat-connector/`)
+### 채팅 커넥터 (`bridge-service/`)
 
 가볍고 무상태인 Flask 애플리케이션으로, 다음을 수행합니다.
 

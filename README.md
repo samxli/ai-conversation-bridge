@@ -39,10 +39,10 @@ While we built this with APJ in mind, the pattern works anywhere you want to use
 ## Architecture
 
 ```text
-Chat App  ←→  Chat Connector  ←→  Flowise (the bridge)  ←→  MCP Server  ←→  Workday
+Chat App  ←→  bridge service  ←→  Flowise (the bridge)  ←→  MCP Server  ←→  Workday
 ```
 
-The project has three main pieces. **Flowise is the brain** — it connects to the LLMs, figures out what the user wants, and calls Workday tools via MCP. The other two components act as its ears and hands: the Chat Connector listens to the chat apps, and the MCP Server executes actions in Workday.
+The project has three main pieces. **Flowise is the brain** — it connects to the LLMs, figures out what the user wants, and calls Workday tools via MCP. The other two components act as its ears and hands: the bridge service listens to the chat apps, and the MCP Server executes actions in Workday.
 
 *(For more details on boundaries and intended usage, check out [docs/architecture.md](docs/architecture.md).)*
 
@@ -50,7 +50,7 @@ The project has three main pieces. **Flowise is the brain** — it connects to t
 | Component           | What it does                                                                                   | Where it lives                         |
 | ------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
 | **Flowise Flows**   | Handles LLM orchestration, intent recognition, and MCP tool calling.                           | [flowise/](flowise/)                 |
-| **Chat Connector**  | A two-way adapter that receives messages from chat platforms and sends the AI's responses back.| [chat-connector/](chat-connector/)   |
+| **bridge service**  | A two-way adapter that receives messages from chat platforms and sends the AI's responses back.| [bridge-service/](bridge-service/)   |
 | **Demo MCP Server** | Mock Workday tools for testing and development. (Swap this out for the Workday Agent Gateway in production). | [mcp-demo-server/](mcp-demo-server/) |
 
 
@@ -60,7 +60,7 @@ The project has three main pieces. **Flowise is the brain** — it connects to t
 
 - A container hosting platform with public HTTPS endpoints (like [Google Cloud Run](https://cloud.google.com/run))
 - A [Flowise](https://flowiseai.com/) instance (cloud or self-hosted, as long as it's public-facing)
-- LINE WORKS Bot credentials and/or DingTalk robot access (for the chat connector)
+- LINE WORKS Bot credentials and/or DingTalk robot access (for the bridge service)
 
 *Note: Everything needs to be deployed to a public-facing cloud environment. We use Google Cloud Run in these examples, but any container platform works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).*
 
@@ -90,33 +90,34 @@ gcloud run deploy mcp-demo-server \
 
 *(Need more help? See [flowise/README.md](flowise/README.md).)*
 
-### 4. Deploy the chat connector
+### 4. Deploy the bridge service
 
 ```bash
-gcloud run deploy chat-connector \
-  --source chat-connector
+gcloud run deploy bridge-service \
+  --source bridge-service
 ```
 
-> **Important:** Don't forget to set your environment variables in the Cloud Run console after deploying! You will need to configure your AI provider (like `AI_PROVIDER` and `FLOWISE_API_URL`) as well as any chat channel settings. See `chat-connector/.env.example` for the full list of variables.
+> **Important:** Don't forget to set your environment variables in the Cloud Run console after deploying! You will need to configure your AI provider (like `AI_PROVIDER` and `FLOWISE_API_URL`) as well as any chat channel settings. See `bridge-service/.env.example` for the full list of variables.
 
 ### 5. Connect Chat Channels
 
 Set your chat platform callback URLs to the channel-specific endpoints:
 
-- LINE WORKS: `https://chat-connector-abc123.us-west1.run.app/lineworks/callback`
-- DingTalk HTTP robot: `https://chat-connector-abc123.us-west1.run.app/dingtalk/callback`
+- LINE WORKS: `https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
+- DingTalk HTTP robot: `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
 
 The legacy `/callback` path is still accepted as a LINE WORKS alias for existing deployments.
 
-## AI Providers
+## Orchestrators
 
-The chat connector supports two AI backends out of the box. `CHAT_PROVIDER` is still accepted as a fallback, but new deployments should use `AI_PROVIDER`.
+The bridge service supports three orchestrators. Prefer `ORCHESTRATOR`; legacy `AI_PROVIDER` / `CHAT_PROVIDER` remain aliases when unset.
 
 
-| Provider              | When to use it                                                                       | Config                     |
-| --------------------- | ------------------------------------------------------------------------------------ | -------------------------- |
-| **Flowise** (default) | Production — gives you full orchestration and MCP tool calling.                        | `AI_PROVIDER=flowise`    |
-| **OpenRouter**        | Demos/experimenting — great for quick testing with any LLM without setting up Flowise. | `AI_PROVIDER=openrouter` |
+| Orchestrator | When to use it | Config |
+| --- | --- | --- |
+| **Flowise** (default) | Production visual flows and MCP in Flowise | `ORCHESTRATOR=flowise` |
+| **LangGraph** | Bundled code-first agent; MCP from the bridge | `ORCHESTRATOR=langgraph` |
+| **Direct LLM** | Demos without tools (OpenAI-compatible / OpenRouter) | `ORCHESTRATOR=direct_llm` |
 
 
 ## Demo MCP Tools
@@ -145,21 +146,22 @@ The demo MCP server comes with mock Workday tools and data so you can test the w
 
 ```text
 ai-conversation-bridge/
-├── chat-connector/          # Webhook adapter (Flask, Python)
-│   ├── app/services/        # Messaging adapters (LINE WORKS, DingTalk) + AI clients
+├── bridge-service/          # Channel adapters + orchestrators (Flask, Python)
+│   ├── app/channels/        # LINE WORKS, DingTalk
+│   ├── app/orchestration/   # Flowise, LangGraph, Direct LLM
 │   ├── Dockerfile
 │   └── .env.example
-├── flowise/                 # Flow templates (the core bridge logic)
-│   ├── flows/               # Exportable Flowise flow JSON files
+├── flowise/                 # Flow templates (Flowise path)
+│   ├── flows/
 │   └── screenshots/
 ├── mcp-demo-server/         # Demo Workday MCP server
-│   ├── mock_data/           # Sample worker, time-off, and pay data
+│   ├── mock_data/
 │   ├── Dockerfile
 │   └── .env.example
-├── docs/                    # Architecture and setup documentation
-├── scripts/                 # Local dev setup (setup.sh) and cloud deploy (deploy-cloud-run.sh)
-├── docker-compose.yml       # Container build/test utility
-└── .github/                 # Issue templates, PR template
+├── docs/                    # Architecture, setup, proposals
+├── scripts/                 # Local setup and Cloud Run deploy
+├── docker-compose.yml
+└── .github/
 ```
 
 ## Documentation

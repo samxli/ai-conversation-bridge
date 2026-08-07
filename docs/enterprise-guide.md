@@ -18,7 +18,10 @@ Recommendations for teams moving the AI Conversation Bridge from prototype to pr
 
 ### Use Official Workday MCP Servers
 
-The `mcp-demo-server/` in this repo is a mock with static JSON data and no authentication. Production deployments should connect to **Workday's official MCP servers** (e.g., Workday Agent Gateway), which provide real data access, OAuth 2.1 / mTLS authentication, audit logging, and compliance controls. Update the MCP server URL in your Flowise flow's Custom MCP tool to point to the Agent Gateway endpoint.
+The `mcp-demo-server/` in this repo is a mock with static JSON data and no authentication. Production deployments should connect to **Workday's official MCP servers** (e.g., Workday Agent Gateway), which provide real data access, OAuth 2.1 / mTLS authentication, audit logging, and compliance controls.
+
+- **Flowise path:** update the MCP server URL in your Flowise flow's Custom MCP tool.
+- **LangGraph path:** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production.
 
 ### Use Flowise Cloud Enterprise
 
@@ -30,11 +33,11 @@ Self-hosting Flowise works for prototyping, but [Flowise Cloud Enterprise](https
 
 ### Log Sanitization
 
-The chat connector logs user IDs and message metadata. In production, log output often flows to centralized systems where PII exposure creates compliance risk (GDPR, PIPL, etc.). Introduce a sanitization layer that redacts user identifiers and message content before they reach log output. Structured JSON logging makes this easier — log processors can redact specific fields rather than relying on pattern matching.
+The bridge service logs user IDs and message metadata. In production, log output often flows to centralized systems where PII exposure creates compliance risk (GDPR, PIPL, etc.). Introduce a sanitization layer that redacts user identifiers and message content before they reach log output. Structured JSON logging makes this easier — log processors can redact specific fields rather than relying on pattern matching.
 
 ### Rate Limiting
 
-The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (Flowise, LLM provider, or chat platform APIs). Add per-IP and per-user rate limits at the chat connector layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
+The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (Flowise, LLM provider, or chat platform APIs). Add per-IP and per-user rate limits at the bridge service layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
 
 ### Model Selection and Temperature
 
@@ -54,11 +57,11 @@ The demo server uses a single `CURRENT_USER_WORKER_ID` for all requests. In prod
 
 ### Retry Logic with Backoff
 
-Transient failures (network blips, 502/503 from Flowise, token refresh races) are inevitable. Add retry logic with exponential backoff to outbound HTTP calls in the chat connector. Avoid retrying on `429` responses — those indicate you need to address rate limits at the provider level, not mask them with retries.
+Transient failures (network blips, 502/503 from Flowise, token refresh races) are inevitable. Add retry logic with exponential backoff to outbound HTTP calls in the bridge service. Avoid retrying on `429` responses — those indicate you need to address rate limits at the provider level, not mask them with retries.
 
 ### Correlation IDs and Structured Logging
 
-When a user reports "the bot didn't respond," you need to trace a single request across the chat connector, Flowise, and MCP pipeline. Generate a request ID at the channel callback entry point, propagate it as an HTTP header through downstream calls, and attach it to all log entries. Structured JSON logging (rather than plain text) makes these traces queryable in Cloud Run, CloudWatch, and similar platforms.
+When a user reports "the bot didn't respond," you need to trace a single request across the bridge service, Flowise, and MCP pipeline. Generate a request ID at the channel callback entry point, propagate it as an HTTP header through downstream calls, and attach it to all log entries. Structured JSON logging (rather than plain text) makes these traces queryable in Cloud Run, CloudWatch, and similar platforms.
 
 ### Prompt Injection Defenses
 
@@ -70,11 +73,11 @@ Users (or attackers replaying webhook payloads) can craft messages that attempt 
 
 ### Observability (Tracing and Metrics)
 
-Add distributed tracing and metrics across the chat connector, Flowise, and MCP pipeline. This enables end-to-end latency visibility, error rate alerting, and the ability to diagnose issues before users report them.
+Add distributed tracing and metrics across the bridge service, Flowise, and MCP pipeline. This enables end-to-end latency visibility, error rate alerting, and the ability to diagnose issues before users report them.
 
 ### Circuit Breakers
 
-If Flowise is down or consistently erroring, a circuit breaker pattern lets the chat connector fail fast with a user-friendly message rather than waiting for timeouts on every request. After a cooldown period, the breaker allows a probe request to check if the service has recovered.
+If Flowise is down or consistently erroring, a circuit breaker pattern lets the bridge service fail fast with a user-friendly message rather than waiting for timeouts on every request. After a cooldown period, the breaker allows a probe request to check if the service has recovered.
 
 ### Output Content Filtering
 

@@ -68,7 +68,7 @@ AI Conversation Bridgeは、AI駆動のオーケストレーションを通じ�
 
 ## コンポーネント詳細
 
-### チャットコネクター（`chat-connector/`）
+### チャットコネクター（`bridge-service/`）
 
 次を担う、軽量でステートレスなFlaskアプリケーションです。
 

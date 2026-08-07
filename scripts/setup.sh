@@ -17,7 +17,7 @@ echo "Prerequisites OK (Docker, Docker Compose)"
 echo ""
 
 # Create .env files from templates
-for component in chat-connector mcp-demo-server; do
+for component in bridge-service mcp-demo-server; do
   if [ ! -f "$REPO_ROOT/$component/.env" ]; then
     cp "$REPO_ROOT/$component/.env.example" "$REPO_ROOT/$component/.env"
     echo "Created $component/.env from template"
@@ -33,7 +33,7 @@ echo "This is a local development environment for smoke testing container builds
 echo "End-to-end testing requires cloud deployment (see deploy-cloud-run.sh)."
 echo ""
 echo "Next steps:"
-echo "  1. Edit chat-connector/.env with your credentials"
+echo "  1. Edit bridge-service/.env with your credentials"
 echo "  2. Run: docker compose up --build"
 echo "  3. Verify both services start without errors"
 echo ""

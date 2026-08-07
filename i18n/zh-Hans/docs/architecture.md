@@ -68,7 +68,7 @@ AI Conversation Bridge 是一套参考架构，通过由 AI 驱动的编排能�
 
 ## 组件详解
 
-### 聊天连接器（`chat-connector/`）
+### 聊天连接器（`bridge-service/`）
 
 一个轻量、无状态的 Flask 应用，负责：
 

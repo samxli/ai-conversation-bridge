@@ -7,6 +7,20 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 in the **0.x** range. This is a reference architecture: 0.x releases do not
 promise API or deploy-surface stability.
 
+## [Unreleased] — 0.2.0
+
+### Breaking
+
+- Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (re-point LINE WORKS and DingTalk callback URLs).
+- Prefer `ORCHESTRATOR` over `AI_PROVIDER` / `CHAT_PROVIDER` (deprecated aliases still work for one release).
+
+### Added
+
+- Orchestration Interface with typed failures and async bridging
+- Bundled LangGraph orchestrator (`ORCHESTRATOR=langgraph`) with MCP allowlist and in-memory checkpointer
+- Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
+- Startup validation for required orchestrator settings
+
 ## [0.1.0] — 2026-08-07
 
 First tagged snapshot of the AI Conversation Bridge reference architecture.

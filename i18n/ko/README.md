@@ -50,7 +50,7 @@ APJ를 염두에 두고 만들었지만, 자체 LLM이나 채팅 플랫폼을 �
 | 구성 요소 | 역할 | 위치 |
 | --- | --- | --- |
 | **Flowise 플로우** | LLM 오케스트레이션, 의도 인식, MCP 도구 호출을 담당합니다. | [flowise/](../../flowise/) |
-| **채팅 커넥터** | 채팅 플랫폼에서 메시지를 받고 AI 응답을 다시 보내는 양방향 어댑터입니다. | [chat-connector/](../../chat-connector/) |
+| **채팅 커넥터** | 채팅 플랫폼에서 메시지를 받고 AI 응답을 다시 보내는 양방향 어댑터입니다. | [bridge-service/](../../bridge-service/) |
 | **데모 MCP 서버** | 테스트·개발용 모의 Workday 도구입니다. (프로덕션에서는 Workday Agent Gateway로 교체하세요.) | [mcp-demo-server/](../../mcp-demo-server/) |
 
 
@@ -93,18 +93,18 @@ gcloud run deploy mcp-demo-server \
 ### 4. 채팅 커넥터 배포
 
 ```bash
-gcloud run deploy chat-connector \
-  --source chat-connector
+gcloud run deploy bridge-service \
+  --source bridge-service
 ```
 
-> **중요:** 배포 후 Cloud Run 콘솔에서 환경 변수를 설정하는 것을 잊지 마세요! AI 제공자(`AI_PROVIDER`, `FLOWISE_API_URL` 등)와 채팅 채널을 설정해야 합니다. 전체 변수 목록은 `chat-connector/.env.example`을 참고하세요.
+> **중요:** 배포 후 Cloud Run 콘솔에서 환경 변수를 설정하는 것을 잊지 마세요! AI 제공자(`AI_PROVIDER`, `FLOWISE_API_URL` 등)와 채팅 채널을 설정해야 합니다. 전체 변수 목록은 `bridge-service/.env.example`을 참고하세요.
 
 ### 5. 채팅 채널 연결
 
 채팅 플랫폼의 콜백 URL을 채널별 엔드포인트로 설정하세요.
 
-- LINE WORKS: `https://chat-connector-abc123.us-west1.run.app/lineworks/callback`
-- DingTalk HTTP 로봇: `https://chat-connector-abc123.us-west1.run.app/dingtalk/callback`
+- LINE WORKS: `https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
+- DingTalk HTTP 로봇: `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
 
 기존 배포와의 호환을 위해 레거시 `/callback` 경로는 LINE WORKS 별칭으로 계속 허용됩니다.
 
@@ -145,7 +145,7 @@ gcloud run deploy chat-connector \
 
 ```text
 ai-conversation-bridge/
-+-- chat-connector/          # Webhook 어댑터 (Flask, Python)
++-- bridge-service/          # Webhook 어댑터 (Flask, Python)
 |   +-- app/services/        # 메시징 어댑터 (LINE WORKS, DingTalk) + AI 클라이언트
 |   +-- Dockerfile
 |   +-- .env.example

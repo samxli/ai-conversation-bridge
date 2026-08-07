@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/9b1ea495-5f23-4ae6-b735-18874acdd327
 | 元件 | 作用 | 位置 |
 | --- | --- | --- |
 | **Flowise 流程** | 負責 LLM 編排、意圖識別與 MCP 工具呼叫。 | [flowise/](../../flowise/) |
-| **聊天連接器** | 雙向適配器，接收來自聊天平台的訊息，並將 AI 的回應回傳。 | [chat-connector/](../../chat-connector/) |
+| **聊天連接器** | 雙向適配器，接收來自聊天平台的訊息，並將 AI 的回應回傳。 | [bridge-service/](../../bridge-service/) |
 | **演示 MCP 伺服器** | 用於測試與開發的模擬 Workday 工具。（生產環境請替換為 Workday Agent Gateway。） | [mcp-demo-server/](../../mcp-demo-server/) |
 
 
@@ -93,18 +93,18 @@ gcloud run deploy mcp-demo-server \
 ### 4. 部署聊天連接器
 
 ```bash
-gcloud run deploy chat-connector \
-  --source chat-connector
+gcloud run deploy bridge-service \
+  --source bridge-service
 ```
 
-> **重要：** 部署完成後，別忘了在 Cloud Run 主控台中設定環境變數！您需要設定 `AI_PROVIDER`（選擇 AI 供應商）和 `FLOWISE_API_URL`（Flowise 端點 URL），以及各聊天渠道的相關設定。完整的變數清單請參閱 `chat-connector/.env.example`。
+> **重要：** 部署完成後，別忘了在 Cloud Run 主控台中設定環境變數！您需要設定 `AI_PROVIDER`（選擇 AI 供應商）和 `FLOWISE_API_URL`（Flowise 端點 URL），以及各聊天渠道的相關設定。完整的變數清單請參閱 `bridge-service/.env.example`。
 
 ### 5. 接入聊天渠道
 
 將聊天平台的回呼 URL 設定為對應渠道的端點：
 
-- LINE WORKS：`https://chat-connector-abc123.us-west1.run.app/lineworks/callback`
-- DingTalk HTTP 機器人：`https://chat-connector-abc123.us-west1.run.app/dingtalk/callback`
+- LINE WORKS：`https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
+- DingTalk HTTP 機器人：`https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
 
 為相容既有部署，舊版 `/callback` 路徑仍作為 LINE WORKS 的別名予以保留。
 
@@ -145,7 +145,7 @@ gcloud run deploy chat-connector \
 
 ```text
 ai-conversation-bridge/
-+-- chat-connector/          # Webhook 適配器（Flask、Python）
++-- bridge-service/          # Webhook 適配器（Flask、Python）
 |   +-- app/services/        # 訊息適配器（LINE WORKS、DingTalk）+ AI 用戶端
 |   +-- Dockerfile
 |   +-- .env.example
