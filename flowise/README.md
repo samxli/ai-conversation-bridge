@@ -38,6 +38,11 @@ An Agent Flow that acts as a **Workday Intelligent Assistant** — it receives n
 - **Memory:** Window-based (last 20 messages)
 - **System prompt:** Enforces strict tool-first behavior — the agent must call MCP tools to execute actions and cannot simulate or mock responses.
 
+> **Keep in sync with LangGraph:** The same role and directives live as plain text in
+> `bridge-service/app/orchestration/langgraph/prompts.py`. When you edit the Flowise
+> `agentMessages` prompt or the MCP tool allowlist, update the LangGraph copies too
+> (and vice versa).
+
 **Tools:**
 
 1. **RSS News** (`get_rss_news`) — HTTP GET tool for fetching RSS feeds (demo/testing)

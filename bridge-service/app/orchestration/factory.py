@@ -29,7 +29,6 @@ def create_orchestrator(config: type[Config] = Config):
             reasoning_effort=config.LLM_REASONING_EFFORT,
         )
     if name == "langgraph":
-        # Imported lazily so Phases 1–3 do not require LangGraph packages until Phase 4.
         from app.orchestration.langgraph.runtime import LangGraphOrchestrator
 
         logger.info("Orchestrator: langgraph")
