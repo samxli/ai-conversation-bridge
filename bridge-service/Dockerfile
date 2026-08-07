@@ -15,4 +15,7 @@ USER appuser
 
 EXPOSE 8080
 
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "--timeout", "180", "main:app"]
+# One worker with multiple threads: I/O-bound orchestration shares in-memory
+# conversation state. Multiple workers would fragment STATE_BACKEND=memory.
+# Timeout above ORCHESTRATOR_TIMEOUT (default 240) so typed failures return first.
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "300", "main:app"]
