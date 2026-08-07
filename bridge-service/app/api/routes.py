@@ -19,6 +19,7 @@ def health():
     """Health check endpoint."""
     return jsonify({
         "status": "ok",
+        "orchestrator": Config.ORCHESTRATOR,
         "ai_provider": Config.AI_PROVIDER,
         "chat_clients": ["lineworks", "dingtalk"],
     }), 200

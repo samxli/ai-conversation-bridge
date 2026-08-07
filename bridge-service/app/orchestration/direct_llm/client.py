@@ -16,7 +16,7 @@ from app.orchestration.errors import FailureCode
 logger = logging.getLogger(__name__)
 
 
-class OpenRouterClient:
+class DirectLLMClient:
     """Demo/experiment chat orchestrator via an OpenAI-compatible HTTP API."""
 
     def __init__(self, api_key, model, api_url, system_prompt=None, reasoning_effort=None):
@@ -100,10 +100,10 @@ class OpenRouterClient:
                     ai_text = ai_text.strip()
                 if user_id:
                     self._append_to_history(user_id, "assistant", ai_text)
-                logger.info(f"OpenRouter responded in {elapsed:.1f}s")
+                logger.info(f"Direct LLM responded in {elapsed:.1f}s")
                 return OrchestrationResult(text=ai_text)
 
-            detail = f"Unexpected OpenRouter response format: {data}"
+            detail = f"Unexpected Direct LLM response format: {data}"
             logger.error(detail)
             return OrchestrationResult(
                 text=None, failure=FailureCode.UNAVAILABLE, detail=detail
@@ -111,13 +111,13 @@ class OpenRouterClient:
 
         except httpx.TimeoutException as e:
             elapsed = time.time() - t0
-            detail = f"OpenRouter timeout after {elapsed:.1f}s: {e}"
+            detail = f"Direct LLM timeout after {elapsed:.1f}s: {e}"
             logger.error(detail)
             return OrchestrationResult(text=None, failure=FailureCode.TIMEOUT, detail=detail)
         except httpx.HTTPStatusError as e:
             elapsed = time.time() - t0
             status = e.response.status_code
-            detail = f"OpenRouter HTTP {status} after {elapsed:.1f}s: {e}"
+            detail = f"Direct LLM HTTP {status} after {elapsed:.1f}s: {e}"
             logger.error(detail)
             if status == 429:
                 return OrchestrationResult(
@@ -128,6 +128,10 @@ class OpenRouterClient:
             )
         except Exception as e:
             elapsed = time.time() - t0
-            detail = f"OpenRouter call failed after {elapsed:.1f}s ({type(e).__name__}): {e}"
+            detail = f"Direct LLM call failed after {elapsed:.1f}s ({type(e).__name__}): {e}"
             logger.error(detail)
             return OrchestrationResult(text=None, failure=FailureCode.UNAVAILABLE, detail=detail)
+
+
+# Backwards-compatible alias.
+OpenRouterClient = DirectLLMClient

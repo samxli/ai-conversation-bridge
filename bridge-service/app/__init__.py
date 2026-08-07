@@ -10,8 +10,7 @@ from app.channels.lineworks.adapter import LineWorksAdapter
 from app.channels.lineworks.client import LineWorksClient
 from app.config import Config
 from app.core import async_runner
-from app.orchestration.direct_llm.client import OpenRouterClient
-from app.orchestration.flowise.client import FlowiseClient
+from app.orchestration.factory import create_orchestrator
 
 
 def create_app():
@@ -22,31 +21,20 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
 
     logging.basicConfig(level=logging.INFO)
+    Config.validate_for_orchestrator()
     async_runner.start_background_loop()
 
     lw_client = LineWorksClient(Config)
     dingtalk_client = DingTalkClient()
     lineworks_adapter = LineWorksAdapter(lw_client, Config.MAX_MESSAGE_LENGTH)
     dingtalk_adapter = DingTalkAdapter(Config, Config.MAX_MESSAGE_LENGTH)
+    orchestrator = create_orchestrator(Config)
 
-    if Config.AI_PROVIDER == 'openrouter':
-        logging.getLogger(__name__).info("Using OpenRouter as chat provider (demo/experiment)")
-        orchestrator = OpenRouterClient(
-            Config.OPENROUTER_API_KEY,
-            Config.OPENROUTER_MODEL,
-            Config.OPENROUTER_API_URL,
-            Config.OPENROUTER_SYSTEM_PROMPT,
-            Config.OPENROUTER_REASONING_EFFORT
-        )
-        timeout = 120
-    else:
-        logging.getLogger(__name__).info("Using Flowise as chat provider")
-        orchestrator = FlowiseClient(
-            Config.FLOWISE_API_URL,
-            Config.FLOWISE_API_KEY,
-            Config.FLOWISE_TIMEOUT
-        )
-        timeout = Config.FLOWISE_TIMEOUT
+    timeout = (
+        Config.FLOWISE_TIMEOUT
+        if Config.ORCHESTRATOR == "flowise"
+        else Config.ORCHESTRATOR_TIMEOUT
+    )
 
     app.extensions['lw_client'] = lw_client
     app.extensions['dingtalk_client'] = dingtalk_client
