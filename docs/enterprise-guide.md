@@ -21,7 +21,7 @@ Recommendations for teams moving the AI Conversation Bridge from prototype to pr
 The `mcp-demo-server/` in this repo is a mock with static JSON data and no authentication. Production deployments should connect to **Workday's official MCP servers** (e.g., Workday Agent Gateway), which provide real data access, OAuth 2.1 / mTLS authentication, audit logging, and compliance controls.
 
 - **Flowise path:** update the MCP server URL in your Flowise flow's Custom MCP tool.
-- **LangGraph path:** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production.
+- **LangGraph path:** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production. `MCP_TOOL_ALLOWLIST` defaults to the bundled safe list; use a comma-separated list for a narrower set. `MCP_TOOL_ALLOWLIST=*` exposes every discovered tool and should be limited to controlled testing. Startup fails if the MCP server is unreachable, an allowlisted tool is missing, or no usable tools remain.
 
 ### Use Flowise Cloud Enterprise
 

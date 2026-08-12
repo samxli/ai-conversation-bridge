@@ -91,7 +91,10 @@ FLOWISE_API_KEY=your-flowise-api-key
 # ORCHESTRATOR=langgraph
 # LLM_API_KEY=your-openrouter-or-compatible-key
 # LLM_MODEL=z-ai/glm-4.5-air:free
+# LLM_BASE_URL=https://openrouter.ai/api/v1
 # MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
+# MCP_AUTH_HEADER=Bearer your-mcp-token
+# MCP_TOOL_ALLOWLIST=find_employee_id_by_name,get_current_user_info
 # STATE_BACKEND=memory
 
 # LINE WORKS bot credentials
@@ -109,6 +112,15 @@ DINGTALK_ALLOW_ALL_USERS=false
 DINGTALK_REQUIRE_MENTION=true
 DINGTALK_GROUP_SESSIONS_PER_USER=true
 ```
+
+For LangGraph, leave `MCP_TOOL_ALLOWLIST` unset to use the built-in safe
+allowlist. Set it to a comma-separated list to select specific discovered
+tools, or set it to `*` only when intentionally allowing every tool exposed by
+the MCP server. Quote `*` when setting it from a shell. An empty value is
+invalid and fails startup. Any allowlisted name the MCP server does not expose
+also fails startup, as does an unreachable MCP server or a server that returns
+no usable tools. Deploy the MCP server first; LangGraph will not boot a healthy
+container without a working tool set.
 
 > **Security:** `LW_API_20_BOT_SECRET` enables webhook signature verification — the connector rejects any callback whose `X-WORKS-Signature` header doesn't match. You can find your Bot Secret in the LINE WORKS Developer Console under your bot's details. If omitted, signature verification is skipped with a warning (acceptable for local development, **not for production**).
 >

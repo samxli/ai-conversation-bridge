@@ -14,11 +14,13 @@ promise API or deploy-surface stability.
 - Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (re-point LINE WORKS and DingTalk callback URLs).
 - Prefer `ORCHESTRATOR` over `AI_PROVIDER` / `CHAT_PROVIDER` (deprecated aliases still work for one release).
 - LangGraph with `STATE_BACKEND=memory` requires a single Cloud Run instance (`--min-instances=1 --max-instances=1`); conversation state is not shared across replicas.
+- LangGraph fails process startup if MCP discovery fails, an allowlisted tool is missing from the server, or no usable tools remain.
 
 ### Added
 
 - Orchestration Interface with typed failures and async bridging
 - Bundled LangGraph orchestrator (`ORCHESTRATOR=langgraph`) with MCP allowlist and in-memory checkpointer
+- `MCP_TOOL_ALLOWLIST` env override (`*` allow-all; missing names fail startup)
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
 

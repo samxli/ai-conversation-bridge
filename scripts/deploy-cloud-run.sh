@@ -47,6 +47,8 @@ echo "     gcloud run services update bridge-service --region $REGION --set-env-
 echo "     gcloud run services update mcp-demo-server --region $REGION --set-env-vars KEY=VALUE"
 echo "  2. For Flowise: update your flow's MCP URL to the deployed mcp-demo-server."
 echo "     For LangGraph: set ORCHESTRATOR=langgraph, LLM_API_KEY, and MCP_SERVER_URL on bridge-service."
+echo "     Optional MCP_TOOL_ALLOWLIST defaults to the safe built-in list; '*' allows all tools."
+echo "     Deploy mcp-demo-server first: a down MCP server or missing allowlisted tools fail boot."
 echo "  3. Set chat platform callbacks (service rename is a breaking change from chat-connector):"
 echo "     LINE WORKS: bridge-service URL + /lineworks/callback"
 echo "     DingTalk:   bridge-service URL + /dingtalk/callback"

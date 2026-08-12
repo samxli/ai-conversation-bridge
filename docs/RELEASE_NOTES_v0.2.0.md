@@ -10,6 +10,7 @@ Canonical change list: [CHANGELOG.md](../CHANGELOG.md) (`[Unreleased] — 0.2.0`
 3. **Callback URLs:** re-point LINE WORKS and DingTalk webhooks to the new `bridge-service` URL (`/lineworks/callback`, `/dingtalk/callback`).
 4. **Config:** prefer `ORCHESTRATOR` (`flowise` | `langgraph` | `direct_llm`). Legacy `AI_PROVIDER` / `CHAT_PROVIDER` and `OPENROUTER_*` remain aliases for one release.
 5. **Single-instance pin (LangGraph):** with `STATE_BACKEND=memory`, keep `--min-instances=1 --max-instances=1` (see `scripts/deploy-cloud-run.sh`). Multiple replicas fragment in-memory conversation state.
+6. **LangGraph MCP fail-closed:** a down MCP server, missing allowlisted tool names, or zero usable tools fail container startup instead of serving a healthy process that cannot call tools.
 
 ## Migration checklist
 
@@ -18,7 +19,7 @@ Canonical change list: [CHANGELOG.md](../CHANGELOG.md) (`[Unreleased] — 0.2.0`
 - [ ] Update LINE WORKS bot callback URL
 - [ ] Update DingTalk robot HTTP callback URL
 - [ ] Set `ORCHESTRATOR` (default `flowise` preserves prior behavior if `FLOWISE_API_URL` is set)
-- [ ] For LangGraph: set `LLM_API_KEY`, `MCP_SERVER_URL`, keep a single Cloud Run instance while `STATE_BACKEND=memory`
+- [ ] For LangGraph: set `LLM_API_KEY`, `MCP_SERVER_URL`, keep a single Cloud Run instance while `STATE_BACKEND=memory`; deploy the MCP server first (missing allowlisted tools or a down MCP server fail boot)
 
 ## Non-breaking additions
 

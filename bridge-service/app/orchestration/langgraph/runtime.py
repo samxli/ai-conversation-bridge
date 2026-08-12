@@ -25,18 +25,17 @@ class LangGraphOrchestrator:
         """Discover MCP tools and compile the graph once at construction (startup)."""
         self.config = config
         self._graph = None
-        self._init_error: str | None = None
         try:
             async_runner.run_coroutine(self._build_graph(), timeout=120.0)
         except Exception as e:
-            self._init_error = f"LangGraph startup failed: {type(e).__name__}: {e}"
-            logger.error(self._init_error)
+            raise SystemExit(f"LangGraph startup failed: {type(e).__name__}: {e}") from e
 
     async def _build_graph(self) -> None:
         model = build_chat_model(self.config)
         tools = await load_mcp_tools(
             self.config.MCP_SERVER_URL,
             self.config.MCP_AUTH_HEADER,
+            self.config.MCP_TOOL_ALLOWLIST,
         )
         checkpointer = make_checkpointer(self.config)
         self._graph = build_graph(model, tools, checkpointer)
@@ -48,7 +47,7 @@ class LangGraphOrchestrator:
             return OrchestrationResult(
                 text=None,
                 failure=FailureCode.UNAVAILABLE,
-                detail=self._init_error or "LangGraph graph was not initialized",
+                detail="LangGraph graph was not initialized",
             )
 
         config = {"configurable": {"thread_id": request.session_id}}

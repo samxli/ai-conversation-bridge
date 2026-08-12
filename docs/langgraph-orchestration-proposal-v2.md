@@ -264,15 +264,15 @@ The mechanism for supplying secrets does not change: environment variables set i
 | Flowise API key                         | Bridge                | —                           |
 | LLM API key and base URL                | Customer's Flowise    | **Bridge**                  |
 | MCP server URL and authorization header | Customer's Flowise    | **Bridge**                  |
-| System prompt and tool allowlist        | Customer's Flowise flow | **Bridge (code and config)** |
+| System prompt and tool allowlist        | Customer's Flowise flow | **Bridge (code and config; safe default with optional env override)** |
 
 Today this is two trust domains: the bridge can reach Flowise but holds nothing that talks to a model or to Workday tools. Selecting LangGraph collapses that into one process holding all of it. This is not a defect — it is the direct consequence of removing a hop — but it is a materially different threat model, and existing documentation is written around Flowise owning the MCP relationship. `docs/architecture.md` and `docs/enterprise-guide.md` need conditional wording, in all locales.
 
 Three requirements follow:
 
-1. **Fail fast on configuration.** Required settings differ per orchestrator. Validate them at startup so a misconfigured deployment fails to boot, rather than answering every user with an apology at request time — which is what happens today.
+1. **Fail fast on configuration.** Required settings differ per orchestrator. Validate them at startup so a misconfigured deployment fails to boot, rather than answering every user with an apology at request time — which is what happens today. On the LangGraph path, also fail boot if MCP discovery fails, an allowlisted tool is missing from the server, or no usable tools remain.
 2. **Prefer secret references.** On Cloud Run, mount the LLM key and MCP authorization header from Secret Manager rather than as plain environment variables. Never place the MCP credential in a URL, and keep it out of logs.
-3. **The customization story changes.** With Flowise a customer edits a prompt in a UI. With LangGraph the prompt and tool allowlist are repository artifacts, so customizing means forking code or exposing them as configuration. This is arguably the most decision-relevant difference for a non-engineering buyer and belongs in the choice guidance (§7.5).
+3. **The customization story changes.** With Flowise a customer edits a prompt in a UI. With LangGraph the prompt is a repository artifact, while the tool allowlist has a safe built-in default and can be narrowed or explicitly replaced through `MCP_TOOL_ALLOWLIST`. This is arguably the most decision-relevant difference for a non-engineering buyer and belongs in the choice guidance (§7.5).
 
 ### 6.5 Execution model and concurrency
 
@@ -342,7 +342,7 @@ Retaining it is worthwhile despite LangGraph-with-no-tools being functionally si
 The LangGraph reference implementation mirrors `flowise/flows/workday-mcp-agent.json`. Concretely, it reproduces:
 
 - **Prompt intent** — the same system-prompt role and directives as the flow's `agentMessages`.
-- **Tools** — the same MCP server and the same explicit tool allowlist as the flow's `mcpActions`. The flow also carries an unrelated `requestsGet` RSS-news tool used for demonstration; the reference graph omits it.
+- **Tools** — the same MCP server and the same default explicit tool allowlist as the flow's `mcpActions`. The LangGraph path can narrow that list or explicitly allow all discovered tools through `MCP_TOOL_ALLOWLIST`. The flow also carries an unrelated `requestsGet` RSS-news tool used for demonstration; the reference graph omits it by default.
 - **Model settings** — the flow's OpenRouter base path, `z-ai/glm-4.5-air:free`, temperature 0.2, carried as `LLM_*` configuration rather than hard-coded.
 - **Memory** — windowed message history, matching the flow's `windowSize` memory, persisted through the checkpointer.
 - **Session continuity** — the same platform-scoped session identifiers.
@@ -461,7 +461,7 @@ The Flowise **client** belongs in the service because it is the bridge's outboun
 - The project must maintain three implementations.
 - Equivalent definitions may behave differently across runtimes.
 - Agent definitions remain runtime-specific.
-- **The system prompt exists in two formats that cannot share a source.** In the flow it is HTML embedded in JSON (`agentMessages`); in LangGraph it is plain text in `prompts.py`. There is no practical single canonical copy, so equivalence is maintained by hand and will drift the first time someone edits one side. The same applies to the MCP tool allowlist, pinned in the flow's `mcpActions` and again in `tools/mcp.py`. Mitigation is a reciprocal note in `flowise/README.md` and `prompts.py` stating that the two must be updated together.
+- **The system prompt exists in two formats that cannot share a source.** In the flow it is HTML embedded in JSON (`agentMessages`); in LangGraph it is plain text in `prompts.py`. There is no practical single canonical copy, so equivalence is maintained by hand and will drift the first time someone edits one side. The same applies to the MCP tool allowlist, pinned in the flow's `mcpActions` and as LangGraph's default in `tools/mcp.py`; `MCP_TOOL_ALLOWLIST` is reserved for intentional deployment-specific overrides. Mitigation is a reciprocal note in `flowise/README.md` and `prompts.py` stating that the two must be updated together.
 - **Dependency weight and licence review.** `requirements.txt` is six pinned packages today. Adding LangGraph, its checkpoint package, LangChain core, an MCP adapter, and a model SDK is a step change in image size, Dependabot surface, and transitive-licence review for a published repository. Licence review should happen before implementation, not after.
 - Bundling LangGraph couples channel and orchestration releases.
 - Selecting LangGraph makes the bridge stateful (§6.3), moves model and MCP credentials into it (§6.4), and changes its concurrency profile (§6.5).
@@ -476,7 +476,7 @@ These tradeoffs are limited and explicit. The internal boundary allows later ext
 | LangGraph loop exceeds the gunicorn timeout, killing the worker with no reply sent        | Medium     | High   | Raise the request timeout above worst-case loop; bound tool iterations; adopt §6.5 option A settings            |
 | Long in-request processing triggers platform webhook retries and duplicate replies         | Medium     | Medium | Document the timeout budget; add inbound message-ID idempotency when adopting §6.5 option B                     |
 | Wider secret custody in the bridge fails an enterprise security review                    | Medium     | High   | Document custody explicitly (§6.4); use Secret Manager references; keep the Flowise path available unchanged    |
-| Prompt and tool allowlist drift between the flow and the graph                            | High       | Medium | Reciprocal update notes in both artifacts; treat as a single change unit in review                              |
+| Prompt and default tool allowlist drift between the flow and the graph                    | High       | Medium | Reciprocal update notes in both artifacts; use `MCP_TOOL_ALLOWLIST` only for intentional deployment-specific overrides |
 | Transitive licence or supply-chain issue from the LangChain dependency tree               | Medium     | Medium | Licence review before implementation; keep Dependabot entries updated after the rename                          |
 | Rename breaks existing deployments' callback URLs                                         | High       | Medium | Release-note the Cloud Run service-name change and the callback re-pointing steps                               |
 | No test suite exists to catch regressions from the restructure                            | High       | Medium | Accepted for a reference architecture; the interface is the seam for adding tests later                         |

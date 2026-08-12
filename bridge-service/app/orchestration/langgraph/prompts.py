@@ -1,6 +1,8 @@
 """System prompt for the LangGraph Workday MCP reference agent.
 
 Mirrors flowise/flows/workday-mcp-agent.json (agentMessages). Update both together.
+The default MCP tool allowlist mirrors that flow's mcpActions; MCP_TOOL_ALLOWLIST
+can intentionally override it per deployment.
 
 Deliberate omissions vs the Flowise flow:
 - approvalPolicy: "always" is not implemented (no channel approval surface).

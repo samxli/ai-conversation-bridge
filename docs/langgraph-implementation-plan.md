@@ -238,6 +238,7 @@ class Orchestrator(Protocol):
 | `LLM_REASONING_EFFORT` | `OPENROUTER_REASONING_EFFORT` | `direct_llm` only |
 | `STATE_BACKEND` | — | `memory` (default). Phase 4. |
 | `MCP_SERVER_URL`, `MCP_AUTH_HEADER` | — | Phase 4 |
+| `MCP_TOOL_ALLOWLIST` | — | Optional comma-separated names; unset uses the built-in safe list, `*` allows all |
 
 **Backward compatibility (required):** `AI_PROVIDER` and `CHAT_PROVIDER` continue to be read when `ORCHESTRATOR` is unset. `openrouter` maps to `direct_llm`, `flowise` maps to `flowise`. Log a deprecation warning naming the replacement. All `OPENROUTER_*` variables continue to be honoured as fallbacks for their `LLM_*` equivalents. Follow the existing fallback style in `config.py:29`.
 
@@ -275,7 +276,7 @@ app/orchestration/langgraph/
 **Tasks:**
 
 1. **Prompt.** Port the flow's system prompt from HTML-in-JSON to plain text in `prompts.py`, preserving role and directives. Add a comment stating it mirrors `flowise/flows/workday-mcp-agent.json` and that the two must be updated together. Add the reciprocal note to `flowise/README.md`.
-2. **MCP tools.** Connect to `MCP_SERVER_URL` over streamable HTTP, sending `MCP_AUTH_HEADER` when set. Filter discovered tools to the 11-name allowlist in §2 — the allowlist is authoritative, so a tool the server exposes but the list omits must not reach the model. **Discover and cache tool schemas once at startup**, not per request.
+2. **MCP tools.** Connect to `MCP_SERVER_URL` over streamable HTTP, sending `MCP_AUTH_HEADER` when set. Filter discovered tools to the built-in 11-name allowlist in §2 by default; accept `MCP_TOOL_ALLOWLIST` as a comma-separated override, with `*` as an explicit allow-all setting. An unset variable remains fail-closed, while an empty value fails startup. Log discovered, retained, and configured-but-missing names. Fail process startup if discovery fails, any allowlisted name is missing from the server, or no usable tools remain. **Discover and cache tool schemas once at startup**, not per request.
 3. **Graph.** Model node → conditional edge → tool node → back to model, terminating on a final response. Bound the loop with a maximum iteration count so a misbehaving model cannot run until the gunicorn timeout kills the worker (see the risk table in proposal §10).
 4. **Memory.** Windowed message history matching the flow's `windowSize`, trimmed inside the graph. Persist through the checkpointer.
 5. **Checkpointer.** `state/factory.py` returns the in-memory saver for `STATE_BACKEND=memory`, and raises a clear error naming the supported values otherwise. Do **not** invent an abstraction over `BaseCheckpointSaver` — it is already the portable seam.
@@ -288,8 +289,9 @@ app/orchestration/langgraph/
 
 - With the demo MCP server running locally, `ORCHESTRATOR=langgraph` answers a time-off balance question by calling an MCP tool
 - Two consecutive messages on the same session ID show conversation continuity; a different session ID does not
-- Startup logs list the tools that were discovered and the subset retained after allowlist filtering
-- Killing the MCP server produces a typed failure and a user-facing message, not a stack trace or a hang
+- Startup logs list discovered tools, the subset retained after allowlist filtering, and any allowlisted names missing from the server; `MCP_TOOL_ALLOWLIST=*` logs an explicit warning
+- Missing allowlisted tools, zero usable tools, or MCP discovery failure fail process startup (`SystemExit`)
+- Killing the MCP server after startup produces a typed failure and a user-facing message, not a stack trace or a hang
 - `ruff check .` clean
 
 ### Phase 5 — Execution and deployment settings
@@ -310,7 +312,7 @@ app/orchestration/langgraph/
 
 **Tasks:**
 
-1. `bridge-service/.env.example` — restructure into sections per orchestrator; add `ORCHESTRATOR`, `LLM_*`, `STATE_BACKEND`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`; mark `AI_PROVIDER`/`OPENROUTER_*` as deprecated aliases.
+1. `bridge-service/.env.example` — restructure into sections per orchestrator; add `ORCHESTRATOR`, `LLM_*`, `STATE_BACKEND`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`, and optional `MCP_TOOL_ALLOWLIST`; mark `AI_PROVIDER`/`OPENROUTER_*` as deprecated aliases.
 2. `docker-compose.yml`, root `.env.example`, `scripts/setup.sh`, `scripts/deploy-cloud-run.sh` — update paths and the Cloud Run service name.
 3. `.github/dependabot.yml` — update both `chat-connector` entries (pip and docker) to `bridge-service`.
 4. `README.md`, `CONTRIBUTING.md`, `docs/architecture.md`, `docs/setup-guide.md` — update paths, add an orchestrator-selection section, and make the MCP-ownership statements conditional. `docs/architecture.md` currently tells readers to update the MCP URL in their Flowise flow; that is true only for the Flowise path.

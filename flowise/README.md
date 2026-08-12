@@ -41,7 +41,9 @@ An Agent Flow that acts as a **Workday Intelligent Assistant** — it receives n
 > **Keep in sync with LangGraph:** The same role and directives live as plain text in
 > `bridge-service/app/orchestration/langgraph/prompts.py`. When you edit the Flowise
 > `agentMessages` prompt or the MCP tool allowlist, update the LangGraph copies too
-> (and vice versa).
+> (and vice versa). LangGraph can narrow or explicitly override its default list with
+> `MCP_TOOL_ALLOWLIST`; leave that variable unset when the bundled list should mirror
+> this flow. LangGraph fails startup if an allowlisted name is missing from the MCP server.
 
 **Tools:**
 

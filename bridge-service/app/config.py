@@ -90,6 +90,9 @@ class Config:
     STATE_BACKEND = os.environ.get("STATE_BACKEND", "memory").lower()
     MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL")
     MCP_AUTH_HEADER = os.environ.get("MCP_AUTH_HEADER")
+    # None means use the built-in safe allowlist; "*" explicitly allows all
+    # tools discovered from the MCP server.
+    MCP_TOOL_ALLOWLIST = os.environ.get("MCP_TOOL_ALLOWLIST")
     ORCHESTRATOR_TIMEOUT = int(os.environ.get("ORCHESTRATOR_TIMEOUT", "240"))
 
     # App
@@ -127,6 +130,12 @@ class Config:
                     + ", ".join(missing)
                     + " to be set."
                 )
+            try:
+                from app.orchestration.langgraph.tools.mcp import parse_mcp_tool_allowlist
+
+                parse_mcp_tool_allowlist(cls.MCP_TOOL_ALLOWLIST)
+            except ValueError as e:
+                raise SystemExit(f"Invalid MCP_TOOL_ALLOWLIST: {e}") from e
         else:
             raise SystemExit(
                 f"Unknown ORCHESTRATOR={name!r}. "
