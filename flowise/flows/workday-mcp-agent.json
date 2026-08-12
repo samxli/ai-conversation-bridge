@@ -742,7 +742,7 @@
           "agentUpdateState": "",
           "agentModelConfig": {
             "cache": "",
-            "modelName": "z-ai/glm-4.5-air:free",
+            "modelName": "openrouter/free",
             "temperature": "0.2",
             "streaming": true,
             "maxTokens": "",

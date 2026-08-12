@@ -46,7 +46,8 @@ MESSAGE_WINDOW_SIZE = 20
 MAX_TOOL_LOOP_ITERATIONS = 8
 
 
-def build_system_prompt() -> str:
+def build_system_prompt(base: str | None = None) -> str:
     """Return the system prompt with today's date appended."""
+    text = base or SYSTEM_PROMPT
     current = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return f"{SYSTEM_PROMPT}\n\nCurrent date and time: {current}"
+    return f"{text}\n\nCurrent date and time: {current}"

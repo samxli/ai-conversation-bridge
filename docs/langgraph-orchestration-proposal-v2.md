@@ -326,7 +326,7 @@ A bundled reference graph that runs in-process and takes responsibility for the 
 
 ### 7.3 Direct LLM
 
-The existing OpenRouter client, re-homed behind the interface as `direct_llm`. This resolves a naming problem the current design would otherwise inherit: OpenRouter presently occupies **two different roles** — an orchestrator-level choice (`AI_PROVIDER=openrouter`) and the model provider behind both other orchestrators (the sample flow uses `chatOpenRouter` with `z-ai/glm-4.5-air:free`). Under three orchestrators that becomes actively confusing.
+The existing OpenRouter client, re-homed behind the interface as `direct_llm`. This resolves a naming problem the current design would otherwise inherit: OpenRouter presently occupies **two different roles** — an orchestrator-level choice (`AI_PROVIDER=openrouter`) and the model provider behind both other orchestrators (the sample flow uses `chatOpenRouter` with `openrouter/free`). Under three orchestrators that becomes actively confusing.
 
 The proposal therefore separates the two axes:
 
@@ -343,7 +343,7 @@ The LangGraph reference implementation mirrors `flowise/flows/workday-mcp-agent.
 
 - **Prompt intent** — the same system-prompt role and directives as the flow's `agentMessages`.
 - **Tools** — the same MCP server and the same default explicit tool allowlist as the flow's `mcpActions`. The LangGraph path can narrow that list or explicitly allow all discovered tools through `MCP_TOOL_ALLOWLIST`. The flow also carries an unrelated `requestsGet` RSS-news tool used for demonstration; the reference graph omits it by default.
-- **Model settings** — the flow's OpenRouter base path, `z-ai/glm-4.5-air:free`, temperature 0.2, carried as `LLM_*` configuration rather than hard-coded.
+- **Model settings** — the flow's OpenRouter base path, `openrouter/free`, temperature 0.2, carried as `LLM_*` configuration rather than hard-coded.
 - **Memory** — windowed message history, matching the flow's `windowSize` memory, persisted through the checkpointer.
 - **Session continuity** — the same platform-scoped session identifiers.
 - **Response and error contract** — §6.1 and §6.2.

@@ -55,7 +55,7 @@ Verified against the working tree. Do not re-derive these; do verify they still 
 
 `flowise/flows/workday-mcp-agent.json` is the behavioral reference for the LangGraph graph. Its agent node specifies:
 
-- Model: `chatOpenRouter`, `z-ai/glm-4.5-air:free`, temperature `0.2`, base path `https://openrouter.ai/api/v1`, streaming `true`
+- Model: `chatOpenRouter`, `openrouter/free`, temperature `0.2`, base path `https://openrouter.ai/api/v1`, streaming `true`
 - Memory: `agentEnableMemory: true`, `agentMemoryType: "windowSize"`
 - System prompt: HTML embedded in JSON under `agentMessages` (begins `<h1>Your Role</h1><p>You are the Workday Intelligent Assistant...`)
 - MCP tool (`customMCP`) with `approvalPolicy: "always"` and this allowlist in `mcpActions`:
@@ -231,7 +231,7 @@ class Orchestrator(Protocol):
 | --- | --- | --- |
 | `ORCHESTRATOR` | `AI_PROVIDER` | Values: `flowise`, `langgraph`, `direct_llm`. Default `flowise`. |
 | `LLM_API_KEY` | `OPENROUTER_API_KEY` | Used by `direct_llm` and `langgraph` |
-| `LLM_MODEL` | `OPENROUTER_MODEL` | Default `z-ai/glm-4.5-air:free` |
+| `LLM_MODEL` | `OPENROUTER_MODEL` | Default `openrouter/free` |
 | `LLM_BASE_URL` | hard-coded OpenRouter URL | Default `https://openrouter.ai/api/v1` |
 | `LLM_TEMPERATURE` | — | Default `0.2`, matching the flow |
 | `LLM_SYSTEM_PROMPT` | `OPENROUTER_SYSTEM_PROMPT` | `direct_llm` only |

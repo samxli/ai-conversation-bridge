@@ -25,7 +25,13 @@ class AgentState(TypedDict):
     iterations: int
 
 
-def build_graph(model, tools: list[BaseTool], checkpointer: BaseCheckpointSaver):
+def build_graph(
+    model,
+    tools: list[BaseTool],
+    checkpointer: BaseCheckpointSaver,
+    system_prompt: str | None = None,
+    message_window: int = MESSAGE_WINDOW_SIZE,
+):
     """Compile the model/tool loop graph with the given checkpointer."""
     model_with_tools = model.bind_tools(tools) if tools else model
     tool_node = ToolNode(tools) if tools else None
@@ -35,13 +41,13 @@ def build_graph(model, tools: list[BaseTool], checkpointer: BaseCheckpointSaver)
             state["messages"],
             strategy="last",
             token_counter=len,
-            max_tokens=MESSAGE_WINDOW_SIZE,
+            max_tokens=message_window,
             start_on="human",
             include_system=True,
             allow_partial=True,
         )
         # Ensure a system prompt is present as the first message for this call.
-        sys = SystemMessage(content=build_system_prompt())
+        sys = SystemMessage(content=build_system_prompt(system_prompt))
         to_model = [sys] + [m for m in windowed if not isinstance(m, SystemMessage)]
         response = model_with_tools.invoke(to_model)
         return {"messages": [response], "iterations": state.get("iterations", 0) + 1}

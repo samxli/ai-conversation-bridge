@@ -66,13 +66,13 @@ class Config:
 
     # LLM settings (direct_llm and langgraph). OPENROUTER_* remain fallbacks.
     LLM_API_KEY = _env("LLM_API_KEY", "OPENROUTER_API_KEY")
-    LLM_MODEL = _env("LLM_MODEL", "OPENROUTER_MODEL", default="z-ai/glm-4.5-air:free")
+    LLM_MODEL = _env("LLM_MODEL", "OPENROUTER_MODEL", default="openrouter/free")
     LLM_BASE_URL = _env("LLM_BASE_URL", default="https://openrouter.ai/api/v1")
     LLM_TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
-    LLM_SYSTEM_PROMPT = _env(
-        "LLM_SYSTEM_PROMPT", "OPENROUTER_SYSTEM_PROMPT", default="You are a helpful assistant."
-    )
+    # None when unset so LangGraph keeps the bundled Workday prompt.
+    LLM_SYSTEM_PROMPT = _env("LLM_SYSTEM_PROMPT", "OPENROUTER_SYSTEM_PROMPT")
     LLM_REASONING_EFFORT = _env("LLM_REASONING_EFFORT", "OPENROUTER_REASONING_EFFORT")
+    LLM_MESSAGE_WINDOW = int(_env("LLM_MESSAGE_WINDOW", default="20"))
 
     # Deprecated aliases still referenced by older docs/scripts.
     OPENROUTER_API_KEY = LLM_API_KEY
@@ -130,6 +130,8 @@ class Config:
                     + ", ".join(missing)
                     + " to be set."
                 )
+            if cls.LLM_MESSAGE_WINDOW <= 0:
+                raise SystemExit("ORCHESTRATOR=langgraph requires LLM_MESSAGE_WINDOW > 0.")
             try:
                 from app.orchestration.langgraph.tools.mcp import parse_mcp_tool_allowlist
 

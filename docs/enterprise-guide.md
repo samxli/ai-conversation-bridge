@@ -51,7 +51,7 @@ The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, and
 
 ### Model Selection and Temperature
 
-The reference flow uses a free-tier model (`z-ai/glm-4.5-air:free`). Free-tier models have aggressive rate limits (often 10-20 RPM) that will cause failures under real load. Switch to a paid model with strong function-calling support. Set temperature to near-0 for tool-calling agents — higher temperatures introduce non-determinism in intent recognition and tool argument generation, leading to hallucinated parameters or skipped tool calls.
+The reference flow uses a free-tier model (`openrouter/free`). Free-tier models have aggressive rate limits (often 10-20 RPM) that will cause failures under real load. Switch to a paid model with strong function-calling support. Set temperature to near-0 for tool-calling agents — higher temperatures introduce non-determinism in intent recognition and tool argument generation, leading to hallucinated parameters or skipped tool calls.
 
 ### Structured Output Schemas
 

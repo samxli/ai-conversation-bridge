@@ -25,7 +25,7 @@ def create_orchestrator(config: type[Config] = Config):
             api_key=config.LLM_API_KEY,
             model=config.LLM_MODEL,
             api_url=config.OPENROUTER_API_URL,
-            system_prompt=config.LLM_SYSTEM_PROMPT,
+            system_prompt=config.LLM_SYSTEM_PROMPT or "You are a helpful assistant.",
             reasoning_effort=config.LLM_REASONING_EFFORT,
         )
     if name == "langgraph":

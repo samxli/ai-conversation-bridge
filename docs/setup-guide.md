@@ -52,7 +52,7 @@ The MCP server exposes tools via streamable HTTP transport at the `/mcp` path. Y
 
 After importing, click the **AI Bridge Agent** node and configure:
 
-1. **Model** — The flow defaults to OpenRouter with the free `z-ai/glm-4.5-air:free` model (Z.ai GLM, a China-based LLM). Add an OpenRouter credential in Flowise, or switch to any other provider with your own API key. Good choices for APJ include Z.ai GLM, Qwen/Alibaba (Tongyi Qianwen), and DeepSeek for China-hosted deployments, or OpenAI, Anthropic, and Gemini elsewhere.
+1. **Model** — The flow defaults to OpenRouter with the free `openrouter/free` model router. Add an OpenRouter credential in Flowise, or switch to any other provider with your own API key. Good choices for APJ include Z.ai GLM, Qwen/Alibaba (Tongyi Qianwen), and DeepSeek for China-hosted deployments, or OpenAI, Anthropic, and Gemini elsewhere.
 2. **Custom MCP Tool** — Update the MCP server URL in the tool configuration:
    - **Demo:** Your deployed demo MCP server URL + `/mcp` (e.g., `https://mcp-demo-server-abc123.us-west1.run.app/mcp`). For the demo server, you can omit the `Authorization` header.
    - **Production:** Your Workday Agent Gateway URL (replace the demo server with Workday's official MCP endpoints, which require proper authentication)
@@ -90,8 +90,10 @@ FLOWISE_API_KEY=your-flowise-api-key
 # Or LangGraph path:
 # ORCHESTRATOR=langgraph
 # LLM_API_KEY=your-openrouter-or-compatible-key
-# LLM_MODEL=z-ai/glm-4.5-air:free
+# LLM_MODEL=openrouter/free
 # LLM_BASE_URL=https://openrouter.ai/api/v1
+# LLM_MESSAGE_WINDOW=20
+# LLM_REASONING_EFFORT=
 # MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
 # MCP_AUTH_HEADER=Bearer your-mcp-token
 # MCP_TOOL_ALLOWLIST=find_employee_id_by_name,get_current_user_info
@@ -121,6 +123,12 @@ invalid and fails startup. Any allowlisted name the MCP server does not expose
 also fails startup, as does an unreachable MCP server or a server that returns
 no usable tools. Deploy the MCP server first; LangGraph will not boot a healthy
 container without a working tool set.
+
+Leave `LLM_SYSTEM_PROMPT` unset on LangGraph to keep the bundled Workday
+prompt; current date and time are always appended. `LLM_MESSAGE_WINDOW`
+defaults to 20 (last N messages). `LLM_REASONING_EFFORT` is optional and
+OpenRouter-shaped; some models ignore it. `LLM_MESSAGE_WINDOW` must be `> 0`
+or LangGraph startup fails.
 
 > **Security:** `LW_API_20_BOT_SECRET` enables webhook signature verification — the connector rejects any callback whose `X-WORKS-Signature` header doesn't match. You can find your Bot Secret in the LINE WORKS Developer Console under your bot's details. If omitted, signature verification is skipped with a warning (acceptable for local development, **not for production**).
 >
@@ -178,7 +186,7 @@ If you want to test the bridge without Flowise or LangGraph tools:
 ```bash
 ORCHESTRATOR=direct_llm
 LLM_API_KEY=your-openrouter-key
-LLM_MODEL=z-ai/glm-4.5-air:free
+LLM_MODEL=openrouter/free
 ```
 
 This connects configured chat channels directly to an OpenAI-compatible LLM — useful for verifying webhook flows before adding orchestration.

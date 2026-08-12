@@ -21,6 +21,7 @@ promise API or deploy-surface stability.
 - Orchestration Interface with typed failures and async bridging
 - Bundled LangGraph orchestrator (`ORCHESTRATOR=langgraph`) with MCP allowlist and in-memory checkpointer
 - `MCP_TOOL_ALLOWLIST` env override (`*` allow-all; missing names fail startup)
+- LangGraph honors `LLM_SYSTEM_PROMPT` when set (unset keeps the Workday prompt + datetime), `LLM_MESSAGE_WINDOW` (default 20), and `LLM_REASONING_EFFORT`
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
 

@@ -38,7 +38,13 @@ class LangGraphOrchestrator:
             self.config.MCP_TOOL_ALLOWLIST,
         )
         checkpointer = make_checkpointer(self.config)
-        self._graph = build_graph(model, tools, checkpointer)
+        self._graph = build_graph(
+            model,
+            tools,
+            checkpointer,
+            system_prompt=self.config.LLM_SYSTEM_PROMPT,
+            message_window=self.config.LLM_MESSAGE_WINDOW,
+        )
         logger.info("LangGraph reference graph compiled with %d tools", len(tools))
 
     async def invoke(self, request: OrchestrationRequest) -> OrchestrationResult:
