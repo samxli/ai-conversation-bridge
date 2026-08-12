@@ -72,8 +72,8 @@ The bridge service receives webhooks from messaging platforms, so it **must be d
 | `ORCHESTRATOR` | When to use it | Required settings |
 | --- | --- | --- |
 | `flowise` (default) | Visual Flowise flows; MCP configured in Flowise | `FLOWISE_API_URL` |
-| `langgraph` | Bundled code-first agent; MCP called from the bridge | `LLM_API_KEY`, `MCP_SERVER_URL` |
-| `direct_llm` | Demo chat without tools | `LLM_API_KEY` |
+| `langgraph` | Bundled code-first agent; MCP called from the bridge; LLM via OpenAI Chat Completions | `LLM_API_KEY`, `MCP_SERVER_URL` |
+| `direct_llm` | Demo chat without tools; same Chat Completions API | `LLM_API_KEY` |
 
 Legacy `AI_PROVIDER` / `CHAT_PROVIDER` (`flowise` or `openrouter`) still work when `ORCHESTRATOR` is unset; prefer `ORCHESTRATOR`.
 
@@ -91,7 +91,7 @@ FLOWISE_API_KEY=your-flowise-api-key
 # ORCHESTRATOR=langgraph
 # LLM_API_KEY=your-openrouter-or-compatible-key
 # LLM_MODEL=openrouter/free
-# LLM_BASE_URL=https://openrouter.ai/api/v1
+# LLM_BASE_URL=https://openrouter.ai/api/v1   # Chat Completions root (…/v1)
 # LLM_MESSAGE_WINDOW=20
 # LLM_REASONING_EFFORT=
 # MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
@@ -129,6 +129,12 @@ prompt; current date and time are always appended. `LLM_MESSAGE_WINDOW`
 defaults to 20 (last N messages). `LLM_REASONING_EFFORT` is optional and
 OpenRouter-shaped; some models ignore it. `LLM_MESSAGE_WINDOW` must be `> 0`
 or LangGraph startup fails.
+
+LangGraph and Direct LLM call the **OpenAI Chat Completions** API
+(`POST {LLM_BASE_URL}/chat/completions`). Set `LLM_BASE_URL` to an OpenAI-compatible
+root such as `https://openrouter.ai/api/v1` or `https://api.openai.com/v1`. The
+OpenAI Responses API and native Anthropic Messages API are not supported; Anthropic
+models work only through a Chat Completions proxy (for example OpenRouter).
 
 > **Security:** `LW_API_20_BOT_SECRET` enables webhook signature verification — the connector rejects any callback whose `X-WORKS-Signature` header doesn't match. You can find your Bot Secret in the LINE WORKS Developer Console under your bot's details. If omitted, signature verification is skipped with a warning (acceptable for local development, **not for production**).
 >
@@ -189,7 +195,9 @@ LLM_API_KEY=your-openrouter-key
 LLM_MODEL=openrouter/free
 ```
 
-This connects configured chat channels directly to an OpenAI-compatible LLM — useful for verifying webhook flows before adding orchestration.
+This connects configured chat channels directly to an OpenAI Chat Completions
+endpoint (`POST {LLM_BASE_URL}/chat/completions`) — useful for verifying webhook
+flows before adding orchestration.
 
 ### Private Key Formatting
 

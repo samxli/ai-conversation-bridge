@@ -86,7 +86,7 @@ Flowise is managed by the customer in their own cloud environment. This project 
 
 ### LangGraph (bundled)
 
-When `ORCHESTRATOR=langgraph`, the bridge service compiles a reference ReAct graph at startup, discovers MCP tools from `MCP_SERVER_URL`, filters them through the built-in safe allowlist (or `MCP_TOOL_ALLOWLIST` when configured), and keeps conversation state in an in-memory checkpointer (`STATE_BACKEND=memory`). Discovery, missing allowlist names, or zero usable tools fail process startup. Pin to a single Cloud Run instance for the reference deploy.
+When `ORCHESTRATOR=langgraph`, the bridge service compiles a reference ReAct graph at startup, calls the LLM through the **OpenAI Chat Completions** API (`ChatOpenAI` at `LLM_BASE_URL`, typically `POST …/v1/chat/completions`), discovers MCP tools from `MCP_SERVER_URL`, filters them through the built-in safe allowlist (or `MCP_TOOL_ALLOWLIST` when configured), and keeps conversation state in an in-memory checkpointer (`STATE_BACKEND=memory`). The OpenAI Responses API and native Anthropic Messages are not used. Discovery, missing allowlist names, or zero usable tools fail process startup. Pin to a single Cloud Run instance for the reference deploy.
 
 ### MCP Server (`mcp-demo-server/`)
 

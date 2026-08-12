@@ -1,5 +1,6 @@
-"""Direct LLM (OpenRouter) chat-completions client for demo and experiment use.
+"""Direct LLM client: OpenAI Chat Completions (`POST {LLM_BASE_URL}/chat/completions`).
 
+Demo/experiment only. Not the OpenAI Responses API or native Anthropic Messages.
 Process-local per-session history is demo-grade: it does not survive process
 restarts and is not shared across multiple Gunicorn workers.
 """
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class DirectLLMClient:
-    """Demo/experiment chat orchestrator via an OpenAI-compatible HTTP API."""
+    """Demo/experiment orchestrator via OpenAI Chat Completions."""
 
     def __init__(self, api_key, model, api_url, system_prompt=None, reasoning_effort=None):
         """Store credentials, model selection, and in-memory history settings."""

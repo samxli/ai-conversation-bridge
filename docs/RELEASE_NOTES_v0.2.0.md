@@ -26,3 +26,4 @@ Canonical change list: [CHANGELOG.md](../CHANGELOG.md) (`[Unreleased] — 0.2.0`
 - Health JSON includes `orchestrator` (keeps `ai_provider` for compatibility)
 - Typed orchestration failures with stable user-facing strings
 - LangGraph and Direct LLM orchestrator options
+- LangGraph and Direct LLM use OpenAI Chat Completions (`POST {LLM_BASE_URL}/chat/completions`), not the Responses API or native Anthropic Messages

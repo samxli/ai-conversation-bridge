@@ -64,7 +64,9 @@ class Config:
     AI_PROVIDER = "openrouter" if ORCHESTRATOR == "direct_llm" else ORCHESTRATOR
     CHAT_PROVIDER = AI_PROVIDER
 
-    # LLM settings (direct_llm and langgraph). OPENROUTER_* remain fallbacks.
+    # LLM settings (direct_llm and langgraph). OpenAI Chat Completions only.
+    # LLM_BASE_URL is the API root (…/v1); clients POST …/chat/completions.
+    # OPENROUTER_* remain fallbacks.
     LLM_API_KEY = _env("LLM_API_KEY", "OPENROUTER_API_KEY")
     LLM_MODEL = _env("LLM_MODEL", "OPENROUTER_MODEL", default="openrouter/free")
     LLM_BASE_URL = _env("LLM_BASE_URL", default="https://openrouter.ai/api/v1")

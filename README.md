@@ -65,8 +65,8 @@ The project has three main pieces. **The selected orchestrator is the brain** �
 - LINE WORKS Bot credentials and/or DingTalk robot access (for the bridge service)
 - Depending on orchestrator:
   - **Flowise** (`ORCHESTRATOR=flowise`, default): a [Flowise](https://flowiseai.com/) instance (cloud or self-hosted, public-facing)
-  - **LangGraph** (`ORCHESTRATOR=langgraph`): an OpenAI-compatible LLM API key and a reachable MCP server URL
-  - **Direct LLM** (`ORCHESTRATOR=direct_llm`): an OpenAI-compatible / OpenRouter API key (demos without tools)
+  - **LangGraph** (`ORCHESTRATOR=langgraph`): an OpenAI Chat Completions API key (`LLM_BASE_URL` + `LLM_API_KEY`) and a reachable MCP server URL
+  - **Direct LLM** (`ORCHESTRATOR=direct_llm`): same Chat Completions credentials (demos without tools)
 
 *Note: Everything needs to be deployed to a public-facing cloud environment. We use Google Cloud Run in these examples, but any container platform works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).*
 
@@ -105,7 +105,7 @@ gcloud run deploy bridge-service \
   --source bridge-service
 ```
 
-> **Important:** Set environment variables in the Cloud Run console after deploying. Prefer `ORCHESTRATOR` (`flowise` | `langgraph` | `direct_llm`) plus the matching credentials — for Flowise, `FLOWISE_API_URL`; for LangGraph, `LLM_API_KEY` and `MCP_SERVER_URL`. LangGraph uses its built-in safe MCP tool allowlist unless `MCP_TOOL_ALLOWLIST` is set; use a comma-separated list for specific tools or `*` for an explicit allow-all override. Missing allowlisted tools or a down MCP server fail container startup. Leave `LLM_SYSTEM_PROMPT` unset to keep the bundled Workday prompt; optional `LLM_MESSAGE_WINDOW` (default 20) and `LLM_REASONING_EFFORT` apply on this path. Also set chat channel settings. See `bridge-service/.env.example`. For LangGraph with `STATE_BACKEND=memory`, pin to a single instance (`--min-instances=1 --max-instances=1`); the reference [deploy script](scripts/deploy-cloud-run.sh) already does this.
+> **Important:** Set environment variables in the Cloud Run console after deploying. Prefer `ORCHESTRATOR` (`flowise` | `langgraph` | `direct_llm`) plus the matching credentials — for Flowise, `FLOWISE_API_URL`; for LangGraph, `LLM_API_KEY` and `MCP_SERVER_URL`. LangGraph and Direct LLM call the OpenAI Chat Completions API (`POST {LLM_BASE_URL}/chat/completions`), not Responses or native Anthropic. LangGraph uses its built-in safe MCP tool allowlist unless `MCP_TOOL_ALLOWLIST` is set; use a comma-separated list for specific tools or `*` for an explicit allow-all override. Missing allowlisted tools or a down MCP server fail container startup. Leave `LLM_SYSTEM_PROMPT` unset to keep the bundled Workday prompt; optional `LLM_MESSAGE_WINDOW` (default 20) and `LLM_REASONING_EFFORT` apply on this path. Also set chat channel settings. See `bridge-service/.env.example`. For LangGraph with `STATE_BACKEND=memory`, pin to a single instance (`--min-instances=1 --max-instances=1`); the reference [deploy script](scripts/deploy-cloud-run.sh) already does this.
 
 ### 5. Connect Chat Channels
 
@@ -125,7 +125,7 @@ The bridge service supports three orchestrators. Prefer `ORCHESTRATOR`; legacy `
 | --- | --- | --- |
 | **Flowise** (default) | Production visual flows and MCP in Flowise | `ORCHESTRATOR=flowise` |
 | **LangGraph** | Bundled code-first agent; MCP from the bridge | `ORCHESTRATOR=langgraph` |
-| **Direct LLM** | Demos without tools (OpenAI-compatible / OpenRouter) | `ORCHESTRATOR=direct_llm` |
+| **Direct LLM** | Demos without tools (OpenAI Chat Completions) | `ORCHESTRATOR=direct_llm` |
 
 
 ## Demo MCP Tools

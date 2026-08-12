@@ -42,7 +42,7 @@ docker compose build         # verify Dockerfiles
 docker compose up --build    # run locally for log inspection / MCP testing
 ```
 
-> **Tip:** To test the bridge service without Flowise, set `ORCHESTRATOR=direct_llm` and provide an `LLM_API_KEY` (legacy `AI_PROVIDER=openrouter` / `OPENROUTER_API_KEY` still work as aliases). This connects the webhook flow directly to an LLM without MCP tools.
+> **Tip:** To test the bridge service without Flowise, set `ORCHESTRATOR=direct_llm` and provide an `LLM_API_KEY` (legacy `AI_PROVIDER=openrouter` / `OPENROUTER_API_KEY` still work as aliases). This posts to the OpenAI Chat Completions API (`{LLM_BASE_URL}/chat/completions`) with no MCP tools.
 
 ## Making Changes
 

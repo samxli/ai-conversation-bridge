@@ -331,7 +331,7 @@ The existing OpenRouter client, re-homed behind the interface as `direct_llm`. T
 The proposal therefore separates the two axes:
 
 - `ORCHESTRATOR=flowise | langgraph | direct_llm`
-- `LLM_*` settings (base URL, model, key), shared by `langgraph` and `direct_llm`, defaulting to OpenRouter
+- `LLM_*` settings (base URL, model, key), shared by `langgraph` and `direct_llm`, defaulting to OpenRouter's OpenAI Chat Completions endpoint (`POST {LLM_BASE_URL}/chat/completions`). Not the Responses API or native Anthropic Messages.
 
 `AI_PROVIDER=openrouter` continues to resolve to `direct_llm` with a deprecation log, following the existing `CHAT_PROVIDER` fallback pattern.
 
@@ -343,7 +343,7 @@ The LangGraph reference implementation mirrors `flowise/flows/workday-mcp-agent.
 
 - **Prompt intent** — the same system-prompt role and directives as the flow's `agentMessages`.
 - **Tools** — the same MCP server and the same default explicit tool allowlist as the flow's `mcpActions`. The LangGraph path can narrow that list or explicitly allow all discovered tools through `MCP_TOOL_ALLOWLIST`. The flow also carries an unrelated `requestsGet` RSS-news tool used for demonstration; the reference graph omits it by default.
-- **Model settings** — the flow's OpenRouter base path, `openrouter/free`, temperature 0.2, carried as `LLM_*` configuration rather than hard-coded.
+- **Model settings** — the flow's OpenRouter Chat Completions base path (`…/api/v1` → `POST …/chat/completions`), `openrouter/free`, temperature 0.2, carried as `LLM_*` configuration rather than hard-coded.
 - **Memory** — windowed message history, matching the flow's `windowSize` memory, persisted through the checkpointer.
 - **Session continuity** — the same platform-scoped session identifiers.
 - **Response and error contract** — §6.1 and §6.2.

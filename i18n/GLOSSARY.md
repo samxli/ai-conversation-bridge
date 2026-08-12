@@ -22,7 +22,7 @@ Also verbatim:
 | Category | Examples |
 |---|---|
 | Tool names | `get_current_user_time_off_balance`, `find_employee_id_by_name` |
-| Environment variables | `ORCHESTRATOR`, `FLOWISE_API_URL`, `LLM_API_KEY`, `LLM_BASE_URL`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`, `MCP_TOOL_ALLOWLIST` (legacy aliases: `AI_PROVIDER`, `CHAT_PROVIDER`) |
+| Environment variables | `ORCHESTRATOR`, `FLOWISE_API_URL`, `LLM_API_KEY`, `LLM_BASE_URL`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`, `MCP_TOOL_ALLOWLIST` (legacy aliases: `AI_PROVIDER`, `CHAT_PROVIDER`). LangGraph/Direct LLM: OpenAI Chat Completions (`POST {LLM_BASE_URL}/chat/completions`). |
 | Paths and filenames | `bridge-service/`, `flowise/flows/`, `.env.example` |
 | Routes | `/lineworks/callback`, `/dingtalk/callback` |
 | Session id formats | `lineworks:<userId>`, `dingtalk:<conversationId>:<senderStaffId>` |

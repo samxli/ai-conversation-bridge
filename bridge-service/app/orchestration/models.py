@@ -1,4 +1,10 @@
-"""Build chat model clients from LLM_* configuration."""
+"""Build chat model clients from LLM_* configuration.
+
+LangGraph uses the OpenAI Chat Completions API only (`POST {LLM_BASE_URL}/chat/completions`),
+via langchain-openai ChatOpenAI. The OpenAI Responses API and native Anthropic Messages
+are not supported. OpenRouter and other OpenAI-compatible proxies work when they expose
+Chat Completions at that path.
+"""
 
 from langchain_openai import ChatOpenAI
 
@@ -19,5 +25,5 @@ def chat_model_kwargs(config: type[Config] = Config) -> dict:
 
 
 def build_chat_model(config: type[Config] = Config):
-    """Return a ChatOpenAI client pointed at the configured OpenAI-compatible base URL."""
+    """Return a ChatOpenAI client for OpenAI Chat Completions at LLM_BASE_URL."""
     return ChatOpenAI(**chat_model_kwargs(config))

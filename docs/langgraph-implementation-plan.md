@@ -93,7 +93,7 @@ These were settled during proposal review. If you believe one is wrong, raise it
 Phases 1–3 can start immediately. Phase 4 must not start until these are answered.
 
 1. **Verify the LangGraph package set and current APIs.** Confirm the actual package names, versions, and import paths for the graph library, the checkpoint package (including the in-memory saver's current class name), and the LangChain MCP adapter. This plan deliberately does not pin them — the ecosystem moves and the names in older documentation are stale. Pin exact versions in `requirements.txt`, matching the existing pin style.
-2. **Confirm the model-provider integration.** The flow uses an OpenRouter base URL with an OpenAI-compatible API. Decide whether to use an OpenAI-compatible chat model class pointed at OpenRouter, or a dedicated integration, and pin that package.
+2. **Confirm the model-provider integration.** The flow uses an OpenRouter base URL with the **OpenAI Chat Completions** API. Use an OpenAI-compatible chat model class pointed at that base URL (`ChatOpenAI`), not the Responses API and not a native Anthropic client. Pin that package.
 3. **Licence review.** Report the transitive dependency tree added by the above, with licences, to the human before installing. This is a published repository and the review is a precondition, not a follow-up.
 4. **Report the image-size delta** after a trial `docker build`, for the record.
 
@@ -232,7 +232,7 @@ class Orchestrator(Protocol):
 | `ORCHESTRATOR` | `AI_PROVIDER` | Values: `flowise`, `langgraph`, `direct_llm`. Default `flowise`. |
 | `LLM_API_KEY` | `OPENROUTER_API_KEY` | Used by `direct_llm` and `langgraph` |
 | `LLM_MODEL` | `OPENROUTER_MODEL` | Default `openrouter/free` |
-| `LLM_BASE_URL` | hard-coded OpenRouter URL | Default `https://openrouter.ai/api/v1` |
+| `LLM_BASE_URL` | hard-coded OpenRouter URL | Default `https://openrouter.ai/api/v1` (OpenAI Chat Completions root; client POSTs `/chat/completions`) |
 | `LLM_TEMPERATURE` | — | Default `0.2`, matching the flow |
 | `LLM_SYSTEM_PROMPT` | `OPENROUTER_SYSTEM_PROMPT` | `direct_llm` only |
 | `LLM_REASONING_EFFORT` | `OPENROUTER_REASONING_EFFORT` | `direct_llm` only |
