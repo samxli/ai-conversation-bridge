@@ -108,7 +108,7 @@ LW_API_20_BOT_ID=your-bot-id
 LW_API_20_BOT_SECRET=your-bot-secret
 
 # DingTalk HTTP robot settings
-# Use admin-console employee UserID values. The connector requires DingTalk's senderStaffId field.
+# Use admin-console employee UserID values for DINGTALK_ALLOWED_USERS.
 DINGTALK_ALLOWED_USERS=ding-user-id-1,ding-user-id-2
 DINGTALK_ALLOW_ALL_USERS=false
 DINGTALK_REQUIRE_MENTION=true
@@ -173,17 +173,32 @@ gcloud run deploy bridge-service \
 
 ### DingTalk HTTP Robot Setup
 
-1. Go to the [DingTalk Developer Console](https://open-dev.dingtalk.com/) and create an enterprise internal app.
-2. Add the Robot capability to the app.
-3. Configure robot message receiving in HTTP mode.
-4. Set the callback URL to your deployed bridge service's public URL + `/dingtalk/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`).
-5. Create and publish an app version that includes the Robot capability. The app version and the robot capability must both be published before DingTalk includes `senderStaffId` in callbacks.
-6. Add the published robot to an internal group in the same DingTalk organization from the DingTalk chat group settings: open the group, open group settings, go to **Group Management** → **Robots**, then add the published enterprise robot.
-7. Set `DINGTALK_ALLOWED_USERS` to the DingTalk employee UserID values that may use the bot, or set `DINGTALK_ALLOW_ALL_USERS=true` only for controlled demos.
+1. **Create Enterprise App & Robot Capability:**
+   - Go to the [DingTalk Developer Console](https://open-dev.dingtalk.com/).
+   - Navigate to **Application Development (应用开发)** → **Enterprise Internal Development (企业内部开发)** → **Create Application (创建应用)**.
+   - In application details, go to **Add Capability (添加应用能力)** and add **Robot (机器人)**.
 
-By default, DingTalk direct messages receive a response from allowed users. Group messages require an @mention (`DINGTALK_REQUIRE_MENTION=true`), and group chat sessions are isolated per user (`DINGTALK_GROUP_SESSIONS_PER_USER=true`).
+2. **Configure HTTP Receiving Mode:**
+   - In robot configuration, set message receiving mode to **HTTP Mode** (not Stream Mode).
+   - Set callback URL to your deployed bridge service public URL + `/dingtalk/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`).
+   - Save configuration.
 
-The connector authorizes DingTalk users with `senderStaffId`, which corresponds to the employee UserID available in the DingTalk admin console. It intentionally ignores callbacks that only include encrypted `senderId` values, because those are not practical for admins to retrieve or manage. If logs show `Ignoring DingTalk message without senderStaffId`, confirm the DingTalk app version and robot capability are both published, and that the published robot is installed in an internal group for the same organization.
+3. **Publish App Version:**
+   - Go to **Version Management & Release (版本管理与发布)** → **Create Version (创建新版本)** and publish. (Unpublished apps omit employee UserIDs in webhook events.)
+
+4. **Interact with the Robot:**
+   - **Direct Message (1-on-1):** Click the robot's profile/name (or search for it in DingTalk) and click the send message / DM button.
+   - **Group Chat:** In DingTalk client, create a new internal group chat (or open an existing internal group), then go to **群设置 (Group Settings)** → **群管理 (Group Management)** → **机器人 (Robots)** → **添加机器人 (Add Robot)**, and select your published enterprise robot.
+
+5. **Configure Access Control (`.env`):**
+   - For open access / demos: Set `DINGTALK_ALLOW_ALL_USERS=true`.
+   - For restricted access: Set `DINGTALK_ALLOWED_USERS` to comma-separated employee UserIDs (found in [DingTalk Admin Console](https://admin.dingtalk.com/) → **Contacts (通讯录)** → **Member Management (成员管理)** → user profile).
+
+By default, direct messages receive responses from allowed users. Group messages require @mention (`DINGTALK_REQUIRE_MENTION=true`), and group sessions are isolated per user (`DINGTALK_GROUP_SESSIONS_PER_USER=true`).
+
+#### Troubleshooting
+
+- **Bot ignores messages:** Confirm app version is published in Developer Console and robot added to internal group within same organization.
 
 ### Quick Test with Direct LLM
 
