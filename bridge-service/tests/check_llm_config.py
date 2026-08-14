@@ -12,7 +12,7 @@ from app.config import Config
 from app.orchestration.langgraph.prompts import SYSTEM_PROMPT, build_system_prompt
 from app.orchestration.models import chat_model_kwargs
 
-DATETIME_SUFFIX = re.compile(r"\n\nCurrent date and time: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+DATETIME_SUFFIX = re.compile(r"\n\nCurrent date and time: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
 
 
 def main() -> None:

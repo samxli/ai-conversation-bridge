@@ -11,6 +11,7 @@ from datetime import datetime
 
 import httpx
 
+from app.core.prompt_security import append_security_guardrails
 from app.orchestration.base import OrchestrationRequest, OrchestrationResult
 from app.orchestration.errors import FailureCode
 
@@ -51,13 +52,15 @@ class DirectLLMClient:
             self.chat_history[user_id] = history[-self.history_limit:]
 
     def _get_dynamic_system_prompt(self):
-        """Build the system prompt, including today's date when configured."""
+        """Build the system prompt with date and security guardrails."""
         current_date = datetime.now().strftime("%Y-%m-%d")
         date_prompt = f"Today's date is {current_date}."
 
         if self.base_system_prompt:
-            return f"{self.base_system_prompt}\n{date_prompt}"
-        return date_prompt
+            dated = f"{self.base_system_prompt}\n{date_prompt}"
+        else:
+            dated = date_prompt
+        return append_security_guardrails(dated)
 
     async def invoke(self, request: OrchestrationRequest) -> OrchestrationResult:
         """Send a chat completion request and return text or a typed failure."""

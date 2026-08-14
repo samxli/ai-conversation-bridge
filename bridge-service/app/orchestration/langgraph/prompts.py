@@ -11,6 +11,8 @@ Deliberate omissions vs the Flowise flow:
 
 from datetime import datetime
 
+from app.core.prompt_security import append_security_guardrails
+
 # Keep in sync with flowise/flows/workday-mcp-agent.json agentMessages content.
 SYSTEM_PROMPT = """Your Role
 
@@ -47,7 +49,8 @@ MAX_TOOL_LOOP_ITERATIONS = 8
 
 
 def build_system_prompt(base: str | None = None) -> str:
-    """Return the system prompt with today's date appended."""
+    """Return the system prompt with date, security directives, and canary token."""
     text = base or SYSTEM_PROMPT
     current = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return f"{text}\n\nCurrent date and time: {current}"
+    dated = f"{text}\n\nCurrent date and time: {current}"
+    return append_security_guardrails(dated)

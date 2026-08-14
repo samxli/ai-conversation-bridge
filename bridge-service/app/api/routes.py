@@ -7,6 +7,7 @@ from flask import Blueprint, current_app, jsonify, request
 from app.config import Config
 from app.core import async_runner
 from app.core.messages import user_message_for
+from app.core.prompt_security import wrap_user_input
 from app.core.response_validator import ResponseValidator
 from app.orchestration.base import OrchestrationRequest
 
@@ -30,7 +31,9 @@ def get_ai_response(user_text: str, session_id: str) -> str:
     orchestrator = current_app.extensions['orchestrator']
     timeout = float(current_app.extensions.get('orchestrator_timeout', Config.FLOWISE_TIMEOUT))
     result = async_runner.run_coroutine(
-        orchestrator.invoke(OrchestrationRequest(message=user_text, session_id=session_id)),
+        orchestrator.invoke(
+            OrchestrationRequest(message=wrap_user_input(user_text), session_id=session_id)
+        ),
         timeout=timeout + 30.0,
     )
     if result.failure is not None:

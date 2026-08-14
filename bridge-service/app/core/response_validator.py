@@ -3,6 +3,8 @@
 import logging
 import re
 
+from app.core.prompt_security import response_contains_canary_leak
+
 logger = logging.getLogger(__name__)
 
 HEDGING_PATTERNS = [
@@ -27,6 +29,8 @@ FALLBACK_RESPONSE = (
     "Please try rephrasing your question, or contact your HR team for assistance."
 )
 
+SECURITY_BLOCKED_RESPONSE = "I cannot fulfill this request."
+
 
 class ResponseValidator:
     """Validates AI responses before they are sent to users.
@@ -46,6 +50,10 @@ class ResponseValidator:
             return FALLBACK_RESPONSE
 
         response_text = response_text.strip()
+
+        if response_contains_canary_leak(response_text):
+            logger.critical("Canary token leak detected in model output; blocking response")
+            return SECURITY_BLOCKED_RESPONSE
 
         if len(response_text) > MAX_RESPONSE_LENGTH:
             logger.warning(
