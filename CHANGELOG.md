@@ -25,6 +25,7 @@ promise API or deploy-surface stability.
 - LangGraph and Direct LLM use the OpenAI Chat Completions API only (`POST {LLM_BASE_URL}/chat/completions`)
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
+- Feishu (Lark) channel adapter (`/feishu/callback`)
 
 ## [0.1.0] — 2026-08-07
 

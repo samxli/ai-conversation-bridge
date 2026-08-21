@@ -22,7 +22,7 @@ def health():
         "status": "ok",
         "orchestrator": Config.ORCHESTRATOR,
         "ai_provider": Config.AI_PROVIDER,
-        "chat_clients": ["lineworks", "dingtalk"],
+        "chat_clients": ["lineworks", "dingtalk", "feishu"],
     }), 200
 
 
@@ -153,3 +153,82 @@ def dingtalk_callback():
     except Exception as e:
         current_app.logger.error(f"Error processing DingTalk callback: {e}")
         return 'Internal Server Error', 500
+
+
+@bp.route('/feishu/callback', methods=['POST'])
+def feishu_callback():
+    """Handle Feishu (Lark) event subscription callbacks."""
+    feishu_client = current_app.extensions['feishu_client']
+    feishu_adapter = current_app.extensions['feishu_adapter']
+
+    body = request.get_json(silent=True) or {}
+    logger.info("Feishu callback received")
+
+    if feishu_adapter.is_encrypted(body):
+        logger.error(
+            "Feishu Encrypt Key is enabled but payload decryption is not implemented; "
+            "disable Encrypt Key in the Feishu developer console or add decryption support."
+        )
+        return jsonify({
+            "error": (
+                "Encrypted payloads are not supported. "
+                "Disable Encrypt Key in your Feishu app event subscription settings."
+            )
+        }), 400
+
+    if feishu_adapter.is_url_verification(body):
+        if feishu_adapter.verify_url_token(body):
+            return jsonify({"challenge": body.get("challenge")})
+        logger.error("Feishu URL verification token mismatch")
+        return jsonify({"error": "Forbidden"}), 403
+
+    if not Config.FEISHU_VERIFICATION_TOKEN:
+        logger.error("FEISHU_VERIFICATION_TOKEN is not configured; rejecting Feishu event")
+        return jsonify({"error": "Forbidden"}), 403
+    if not feishu_adapter.verify_event_token(body):
+        logger.error("Feishu event verification token mismatch")
+        return jsonify({"error": "Forbidden"}), 403
+
+    event_type = feishu_adapter.event_type(body)
+
+    if event_type == "im.message.receive_v1":
+        try:
+            message = feishu_adapter.parse_inbound(body.get("event") or {})
+            if message is None:
+                return jsonify({"code": 0, "msg": "ok"}), 200
+
+            if not feishu_client.validate_config():
+                logger.error("Feishu configuration incomplete")
+                return jsonify({"code": 0, "msg": "ok"}), 200
+
+            if feishu_adapter.is_over_length(message):
+                try:
+                    feishu_client.send_text_to_chat(
+                        message.reply_target, message_too_long_response()
+                    )
+                except Exception as e:
+                    logger.error("Failed to send length limit message: %s", e)
+                return jsonify({"code": 0, "msg": "ok"}), 200
+
+            try:
+                ai_reply = get_ai_response(message.text, session_id=message.session_id)
+                send_result = feishu_client.send_text_to_chat(message.reply_target, ai_reply)
+                if isinstance(send_result, dict) and send_result.get("code") != 0:
+                    logger.error("Feishu send returned error payload: %s", send_result)
+            except Exception as e:
+                logger.error("Feishu error while processing message: %s", e)
+                try:
+                    feishu_client.send_text_to_chat(
+                        message.reply_target,
+                        "Sorry, an error occurred while processing your request. "
+                        "Please try again later or contact support.",
+                    )
+                except Exception as send_err:
+                    logger.error("Failed to send error message: %s", send_err)
+        except Exception as e:
+            logger.exception("Error processing Feishu callback: %s", e)
+            return 'Internal Server Error', 500
+        return jsonify({"code": 0, "msg": "ok"}), 200
+
+    logger.info("Ignoring Feishu event_type=%s", event_type)
+    return jsonify({"code": 0, "msg": "ok"}), 200

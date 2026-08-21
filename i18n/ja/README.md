@@ -105,6 +105,7 @@ gcloud run deploy bridge-service \
 
 - LINE WORKS：`https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
 - DingTalk HTTPロボット：`https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
+- Feishu（フィーシュー）：`https://bridge-service-abc123.us-west1.run.app/feishu/callback`
 
 レガシーの`/callback`パスは、既存デプロイ向けのLINE WORKSエイリアスとして引き続き受け付けられます。
 

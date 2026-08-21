@@ -25,6 +25,7 @@ Bring localized docs in line with the English sources for at least:
 | System diagram + request flow | `docs/architecture.md` | Bridge Service + Orchestrator (not "Chat Connector" / "Flowise (The Core)") |
 | Scaling / execution model | `docs/setup-guide.md`, `docs/architecture.md` | Gunicorn 1×8, Cloud Run `--concurrency=8`, single-instance pin for in-memory LangGraph state |
 | Conversation-state retention | `docs/enterprise-guide.md` | New subsection for checkpointed HR data |
+| Feishu (Lark) Bot Setup | `docs/setup-guide.md` | New section after DingTalk; callback `/feishu/callback` |
 
 ## Correctness fix that must propagate
 

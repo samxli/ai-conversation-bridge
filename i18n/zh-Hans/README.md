@@ -105,6 +105,7 @@ gcloud run deploy bridge-service \
 
 - LINE WORKS：`https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
 - DingTalk HTTP 机器人：`https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
+- Feishu（飞书）：`https://bridge-service-abc123.us-west1.run.app/feishu/callback`
 
 为兼容既有部署，旧版 `/callback` 路径仍作为 LINE WORKS 的别名予以保留。
 

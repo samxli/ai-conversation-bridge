@@ -49,7 +49,7 @@ The AI Conversation Bridge is a reference architecture for connecting enterprise
 │  └────────────────┘  └────────────────┘  │ Direct LLM       │  └───────────┘   │
 │                                          └──────────────────┘                  │
 │  LINE WORKS          Webhook adapter     LLM orchestration      Tool execution │
-│  DingTalk            Message routing     Intent recognition     Workday APIs   │
+│  DingTalk / Feishu   Message routing     Intent recognition     Workday APIs   │
 │  WeChat/KakaoTalk    Response delivery   Jargon translation     Mock data(dev) │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -99,11 +99,12 @@ The demo server has **no authentication** and is not suitable for production use
 ## Request Flow
 
 ```
-1. User sends "How many vacation days do I have?" in LINE WORKS or DingTalk
+1. User sends "How many vacation days do I have?" in LINE WORKS, DingTalk, or Feishu
    │
 2. Chat platform POSTs webhook to bridge service
    - LINE WORKS: /lineworks/callback (or legacy /callback)
    - DingTalk: /dingtalk/callback
+   - Feishu: /feishu/callback
    │
 3. bridge service extracts message + platform-scoped session id, invokes the
    selected orchestrator (ORCHESTRATOR)
@@ -135,7 +136,7 @@ The customer's LLM runs in their own environment. Messages are processed through
 
 ### Platform Agnostic
 
-The bridge service pattern is repeatable for any messaging platform. Orchestrators do not need platform-specific webhook or reply logic; the bridge passes a platform-scoped session id such as `lineworks:<userId>` or `dingtalk:<conversationId>:<senderStaffId>` so simultaneous chat channels do not collide in conversation memory.
+The bridge service pattern is repeatable for any messaging platform. Orchestrators do not need platform-specific webhook or reply logic; the bridge passes a platform-scoped session id such as `lineworks:<userId>`, `dingtalk:<conversationId>:<senderStaffId>`, or `feishu:<chat_id>:<sender_id>` so simultaneous chat channels do not collide in conversation memory.
 
 ### Production Hardening
 

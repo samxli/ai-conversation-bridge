@@ -113,6 +113,7 @@ Flowiseは、お客様自身のクラウド環境で管理します。本プロ�
 2. チャットプラットフォームがWebhookをチャットコネクターにPOSTする
    - LINE WORKS: /lineworks/callback（またはレガシー /callback）
    - DingTalk: /dingtalk/callback
+   - Feishu: /feishu/callback
    │
 3. チャットコネクターがメッセージ + プラットフォーム単位のセッションIDを抽出し、Flowise予測APIを呼び出す
    │

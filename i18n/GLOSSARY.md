@@ -22,10 +22,10 @@ Also verbatim:
 | Category | Examples |
 |---|---|
 | Tool names | `get_current_user_time_off_balance`, `find_employee_id_by_name` |
-| Environment variables | `ORCHESTRATOR`, `FLOWISE_API_URL`, `LLM_API_KEY`, `LLM_BASE_URL`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`, `MCP_TOOL_ALLOWLIST` (legacy aliases: `AI_PROVIDER`, `CHAT_PROVIDER`). LangGraph/Direct LLM: OpenAI Chat Completions (`POST {LLM_BASE_URL}/chat/completions`). |
+| Environment variables | `ORCHESTRATOR`, `FLOWISE_API_URL`, `LLM_API_KEY`, `LLM_BASE_URL`, `MCP_SERVER_URL`, `MCP_AUTH_HEADER`, `MCP_TOOL_ALLOWLIST`, `FEISHU_VERIFICATION_TOKEN`, `FEISHU_APP_ID`, `FEISHU_APP_SECRET` (legacy aliases: `AI_PROVIDER`, `CHAT_PROVIDER`). LangGraph/Direct LLM: OpenAI Chat Completions (`POST {LLM_BASE_URL}/chat/completions`). |
 | Paths and filenames | `bridge-service/`, `flowise/flows/`, `.env.example` |
-| Routes | `/lineworks/callback`, `/dingtalk/callback` |
-| Session id formats | `lineworks:<userId>`, `dingtalk:<conversationId>:<senderStaffId>` |
+| Routes | `/lineworks/callback`, `/dingtalk/callback`, `/feishu/callback` |
+| Session id formats | `lineworks:<userId>`, `dingtalk:<conversationId>:<senderStaffId>`, `feishu:<chat_id>:<sender_id>` |
 | Shell commands, URLs, JSON payloads | `gcloud run deploy …`, `{ vacation: { available: 12, used: 3 } }` |
 
 **`AI Conversation Bridge`** is a product name and stays in Latin script. The generic phrase "the Bridge", however, *is* translated — zh-Hans 本桥接层, zh-Hant 本橋接層, ja 本ブリッジ, ko 브릿지 계층.

@@ -200,6 +200,14 @@ By default, direct messages receive responses from allowed users. Group messages
 
 - **Bot ignores messages:** Confirm app version is published in Developer Console and robot added to internal group within same organization.
 
+### Feishu (Lark) Bot Setup
+
+1. Go to the [Feishu Open Platform](https://open.feishu.cn/app) and create an enterprise app.
+2. Enable **Event Subscription** and subscribe to `im.message.receive_v1`.
+3. Set the request URL to your deployed bridge service's public URL + `/feishu/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/feishu/callback`).
+4. Copy the **Verification Token** into `FEISHU_VERIFICATION_TOKEN`, and set `FEISHU_APP_ID` / `FEISHU_APP_SECRET` from the app credentials page.
+5. Leave **Encrypt Key** disabled unless you add payload decryption support — encrypted callbacks return HTTP 400 with a clear error.
+
 ### Quick Test with Direct LLM
 
 If you want to test the bridge without Flowise or LangGraph tools:

@@ -113,6 +113,7 @@ Flowise 由客户在自有云环境中管理。本项目提供流程模板，而
 2. 聊天平台将 Webhook POST 到聊天连接器
    - LINE WORKS：/lineworks/callback（或旧版 /callback）
    - DingTalk：/dingtalk/callback
+   - Feishu：/feishu/callback
    │
 3. 聊天连接器提取消息 + 按平台隔离的会话 ID，调用 Flowise 预测 API
    │

@@ -37,6 +37,11 @@ class Config:
         os.environ.get("DINGTALK_GROUP_SESSIONS_PER_USER", "true").lower() == "true"
     )
 
+    # Feishu (Lark) Open Platform
+    FEISHU_VERIFICATION_TOKEN = os.environ.get("FEISHU_VERIFICATION_TOKEN")
+    FEISHU_APP_ID = os.environ.get("FEISHU_APP_ID")
+    FEISHU_APP_SECRET = os.environ.get("FEISHU_APP_SECRET")
+
     # Orchestrator: flowise | langgraph | direct_llm
     # Legacy AI_PROVIDER / CHAT_PROVIDER: flowise | openrouter
     _orchestrator_raw = os.environ.get("ORCHESTRATOR")

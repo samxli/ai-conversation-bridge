@@ -113,6 +113,7 @@ Flowise는 고객이 자체 클라우드 환경에서 관리합니다. 이 프�
 2. 채팅 플랫폼이 Webhook을 채팅 커넥터로 POST합니다
    - LINE WORKS: /lineworks/callback (또는 레거시 /callback)
    - DingTalk: /dingtalk/callback
+   - Feishu: /feishu/callback
    │
 3. 채팅 커넥터가 메시지 + 플랫폼별 세션 ID를 추출하고 Flowise 예측 API를 호출합니다
    │

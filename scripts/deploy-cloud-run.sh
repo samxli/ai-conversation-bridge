@@ -52,3 +52,4 @@ echo "     Deploy mcp-demo-server first: a down MCP server or missing allowliste
 echo "  3. Set chat platform callbacks (service rename is a breaking change from chat-connector):"
 echo "     LINE WORKS: bridge-service URL + /lineworks/callback"
 echo "     DingTalk:   bridge-service URL + /dingtalk/callback"
+echo "     Feishu:     bridge-service URL + /feishu/callback"
