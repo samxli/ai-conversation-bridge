@@ -41,6 +41,14 @@ class FeishuAdapter:
         header = body.get("header") or {}
         return header.get("event_type")
 
+    def idempotency_key(self, event: dict) -> str | None:
+        """Return feishu:{message_id} for retry dedup, or None if missing.
+
+        Feishu retries the same user message under a new event_id; use message_id.
+        """
+        message_id = (event.get("message") or {}).get("message_id")
+        return f"feishu:{message_id}" if message_id else None
+
     def parse_inbound(self, event: dict) -> InboundMessage | None:
         """Parse an im.message.receive_v1 event into an InboundMessage."""
         message = event.get("message") or {}

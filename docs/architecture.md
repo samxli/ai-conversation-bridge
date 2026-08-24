@@ -106,7 +106,8 @@ The demo server has **no authentication** and is not suitable for production use
    - DingTalk: /dingtalk/callback
    - Feishu: /feishu/callback
    │
-3. bridge service extracts message + platform-scoped session id, invokes the
+3. bridge service extracts message + platform-scoped session id, claims a
+   delivery key so platform retries skip a second orchestrator call, invokes the
    selected orchestrator (ORCHESTRATOR)
    │
 4. Orchestrator LLM recognizes intent: get_current_user_time_off_balance

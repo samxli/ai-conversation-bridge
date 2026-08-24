@@ -12,6 +12,7 @@ from app.channels.lineworks.adapter import LineWorksAdapter
 from app.channels.lineworks.client import LineWorksClient
 from app.config import Config
 from app.core import async_runner
+from app.core.idempotency import IdempotencyStore
 from app.orchestration.factory import create_orchestrator
 
 
@@ -48,6 +49,7 @@ def create_app():
     app.extensions['feishu_adapter'] = feishu_adapter
     app.extensions['orchestrator'] = orchestrator
     app.extensions['orchestrator_timeout'] = timeout
+    app.extensions['idempotency'] = IdempotencyStore()
 
     from app.api.routes import bp
     app.register_blueprint(bp)

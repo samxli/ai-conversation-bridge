@@ -47,7 +47,9 @@ The bridge service logs user IDs and message metadata. In production, log output
 
 ### Rate Limiting
 
-The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (Flowise, LLM provider, or chat platform APIs). Add per-IP and per-user rate limits at the bridge service layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
+The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, `/feishu/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (Flowise, LLM provider, or chat platform APIs). Add per-IP and per-user rate limits at the bridge service layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
+
+Inbound webhook retries are suppressed in-process by an `IdempotencyStore` (Feishu `message_id`, DingTalk `msgId`, LINE WORKS SHA-256 of the raw body) with a 6-hour TTL. That does not span Cloud Run replicas — use a shared SET NX store if you raise `--max-instances`.
 
 ### Model Selection and Temperature
 

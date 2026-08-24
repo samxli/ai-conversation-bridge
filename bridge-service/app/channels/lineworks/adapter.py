@@ -45,6 +45,10 @@ class LineWorksAdapter:
         """Build a platform-scoped session ID for a LINE WORKS user."""
         return f"lineworks:{user_id}"
 
+    def idempotency_key(self, raw_body: bytes) -> str:
+        """Return a SHA-256 of the raw webhook body; LINE WORKS has no event id."""
+        return f"lineworks:{hashlib.sha256(raw_body).hexdigest()}"
+
     def parse_inbound(self, data: dict) -> InboundMessage | None:
         """Parse a LINE WORKS callback JSON body into an InboundMessage."""
         if not data or data.get('type') != 'message':

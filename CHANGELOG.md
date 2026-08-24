@@ -26,6 +26,7 @@ promise API or deploy-surface stability.
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
 - Feishu (Lark) channel adapter (`/feishu/callback`)
+- In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash) so platform retries do not double-call the orchestrator
 
 ## [0.1.0] — 2026-08-07
 

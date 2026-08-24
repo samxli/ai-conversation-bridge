@@ -208,6 +208,8 @@ By default, direct messages receive responses from allowed users. Group messages
 4. Copy the **Verification Token** into `FEISHU_VERIFICATION_TOKEN`, and set `FEISHU_APP_ID` / `FEISHU_APP_SECRET` from the app credentials page.
 5. Leave **Encrypt Key** disabled unless you add payload decryption support — encrypted callbacks return HTTP 400 with a clear error.
 
+Feishu retries the webhook if it does not receive HTTP 200 within **3 seconds** (then again at 15s / 5min / 1h / 6h). Orchestrator calls usually exceed 3s, so the bridge claims `message_id` before the AI call and ignores later deliveries of the same message. Dedup is in-process only (same limit as LangGraph `STATE_BACKEND=memory`: one Cloud Run instance).
+
 ### Quick Test with Direct LLM
 
 If you want to test the bridge without Flowise or LangGraph tools:
@@ -233,6 +235,8 @@ Container platforms handle multi-line environment variables differently. The bri
 ### Scaling and execution model
 
 The bridge service runs Gunicorn with **one worker and eight threads** (`--workers 1 --threads 8 --timeout 300`). Work is I/O-bound; threads share in-memory conversation state used by `ORCHESTRATOR=langgraph` with `STATE_BACKEND=memory`. Multiple workers (or multiple Cloud Run instances) would fragment that state.
+
+Webhook retry dedup (`message_id` / `msgId` / LINE WORKS body hash) is the same in-process map. Extra instances can still double-process a retry. Stay on a single instance until that store is shared.
 
 The reference `scripts/deploy-cloud-run.sh` therefore pins Cloud Run to `--min-instances=1 --max-instances=1 --concurrency=8`. Keep `ORCHESTRATOR_TIMEOUT` (default 240) below the Gunicorn timeout so typed failures return before the worker is killed.
 

@@ -55,6 +55,17 @@ def message_too_long_response() -> str:
     return f"Your message is too long. Please keep it under {Config.MAX_MESSAGE_LENGTH} characters."
 
 
+def is_duplicate_delivery(key: str | None) -> bool:
+    """Record key and return True when this webhook is a retry of an in-flight or recent delivery."""
+    if not key:
+        return False
+    store = current_app.extensions['idempotency']
+    if store.claim(key):
+        return False
+    logger.info("Ignoring duplicate webhook delivery key=%s", key)
+    return True
+
+
 @bp.route('/callback', methods=['POST'])
 @bp.route('/lineworks/callback', methods=['POST'])
 def lineworks_callback():
@@ -96,6 +107,9 @@ def lineworks_callback():
             current_app.logger.error("Missing one or more LINE WORKS environment variables.")
             return 'Internal Server Error', 500
 
+        if is_duplicate_delivery(lineworks_adapter.idempotency_key(raw_body)):
+            return 'OK', 200
+
         ai_response_text = get_ai_response(message.text, session_id=message.session_id)
 
         reply_content = {
@@ -134,6 +148,9 @@ def dingtalk_callback():
         should_process, reason = dingtalk_adapter.should_process_payload(message, data)
         if not should_process:
             current_app.logger.info(reason)
+            return 'OK', 200
+
+        if is_duplicate_delivery(dingtalk_adapter.idempotency_key(data)):
             return 'OK', 200
 
         if dingtalk_adapter.is_over_length(message):
@@ -193,12 +210,16 @@ def feishu_callback():
 
     if event_type == "im.message.receive_v1":
         try:
-            message = feishu_adapter.parse_inbound(body.get("event") or {})
+            event = body.get("event") or {}
+            message = feishu_adapter.parse_inbound(event)
             if message is None:
                 return jsonify({"code": 0, "msg": "ok"}), 200
 
             if not feishu_client.validate_config():
                 logger.error("Feishu configuration incomplete")
+                return jsonify({"code": 0, "msg": "ok"}), 200
+
+            if is_duplicate_delivery(feishu_adapter.idempotency_key(event)):
                 return jsonify({"code": 0, "msg": "ok"}), 200
 
             if feishu_adapter.is_over_length(message):

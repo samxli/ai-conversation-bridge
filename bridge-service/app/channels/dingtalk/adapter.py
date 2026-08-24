@@ -34,6 +34,11 @@ class DingTalkAdapter:
             return f"dingtalk:{conversation_id}:{sender_user_id}"
         return f"dingtalk:{conversation_id}"
 
+    def idempotency_key(self, payload: dict) -> str | None:
+        """Return dingtalk:{msgId} for retry dedup, or None if missing."""
+        msg_id = payload.get("msgId")
+        return f"dingtalk:{msg_id}" if msg_id else None
+
     def parse_inbound(self, payload: dict) -> InboundMessage | None:
         """Parse and validate a DingTalk callback payload into an InboundMessage."""
         if payload.get("msgtype") != "text":
