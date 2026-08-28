@@ -12,7 +12,7 @@
 
 ## 概要
 <p align="center">
-   <img width="900" height="490" alt="全体アーキテクチャ" src="https://github.com/user-attachments/assets/cdd3bcc0-ece8-48ab-9631-0006513cb5a8" />
+   <img width="900" alt="全体アーキテクチャ" src="../../../docs/assets/architecture.png" />
 </p>
 
 AI Conversation Bridgeは、AI駆動のオーケストレーションを通じて企業向けメッセージングプラットフォームをWorkdayに接続するリファレンスアーキテクチャです。アジア太平洋および日本（APJ）地域における次の四つの重要な課題に対応します。

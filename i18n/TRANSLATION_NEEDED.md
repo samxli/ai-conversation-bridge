@@ -19,13 +19,17 @@ Bring localized docs in line with the English sources for at least:
 
 | Area | English location | Notes |
 | --- | --- | --- |
-| Orchestrators table | `README.md` (Orchestrators) | Prefer `ORCHESTRATOR`; three paths including LangGraph / Direct LLM |
-| Component table + architecture chain | `README.md` (Architecture) | Branched orchestrator; not Flowise-only |
-| Quick Start prerequisites | `README.md` | Flowise is conditional on `ORCHESTRATOR=flowise` |
-| System diagram + request flow | `docs/architecture.md` | Bridge Service + Orchestrator (not "Chat Connector" / "Flowise (The Core)") |
-| Scaling / execution model | `docs/setup-guide.md`, `docs/architecture.md` | Gunicorn 1×8, Cloud Run `--concurrency=8`, single-instance pin for in-memory LangGraph state |
-| Conversation-state retention | `docs/enterprise-guide.md` | New subsection for checkpointed HR data |
-| Feishu (Lark) Bot Setup | `docs/setup-guide.md` | New section after DingTalk; callback `/feishu/callback`; 3s retry / `message_id` dedup |
+| Flowise sunset banner | `README.md`, `docs/architecture.md`, `docs/setup-guide.md`, `docs/enterprise-guide.md` | EOL 31 Aug 2026; link flowiseai.com/sunset and archived GitHub repo |
+| Default orchestrator | `README.md`, `docs/setup-guide.md`, release notes | `langgraph` is default; Flowise deprecated opt-in |
+| Orchestrators table | `README.md` (Orchestrators) | LangGraph first; Flowise marked deprecated |
+| Component table + architecture chain | `README.md` (Architecture) | LangGraph in-process; not Flowise-as-core |
+| Quick Start / deploy | `README.md`, `docs/setup-guide.md` | Env on first Cloud Run revision; `LLM_API_KEY` + `MCP_SERVER_URL` |
+| Architecture image | `docs/architecture.md` | `docs/assets/architecture.png` (img src updated in localized architecture.md) |
+| System diagram + request flow | `docs/architecture.md` | LangGraph-first hub-and-spoke |
+| Scaling / execution model | `docs/setup-guide.md`, `docs/architecture.md` | Gunicorn 1×8, Cloud Run `--concurrency=8`, single-instance pin; 256Mi test note |
+| Conversation-state retention | `docs/enterprise-guide.md` | LangGraph in-memory checkpointer retains HR data |
+| Feishu (Lark) Bot Setup | `docs/setup-guide.md` | `/feishu/callback`; `message_id` dedup |
+| Deprecated Flowise path | `docs/setup-guide.md`, `flowise/README.md` | Moved to end; fork archived repo |
 
 ## Correctness fix that must propagate
 

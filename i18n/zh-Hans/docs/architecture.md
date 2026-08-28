@@ -12,7 +12,7 @@
 
 ## 概述
 <p align="center">
-   <img width="900" height="490" alt="高层架构" src="https://github.com/user-attachments/assets/cdd3bcc0-ece8-48ab-9631-0006513cb5a8" />
+   <img width="900" alt="高层架构" src="../../../docs/assets/architecture.png" />
 </p>
 
 AI Conversation Bridge 是一套参考架构，通过由 AI 驱动的编排能力，将企业消息平台连接到 Workday。它针对亚太及日本（APJ）地区的四项关键挑战：

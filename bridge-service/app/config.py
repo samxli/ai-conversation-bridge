@@ -45,11 +45,11 @@ class Config:
     # Orchestrator: flowise | langgraph | direct_llm
     # Legacy AI_PROVIDER / CHAT_PROVIDER: flowise | openrouter
     _orchestrator_raw = os.environ.get("ORCHESTRATOR")
-    _legacy_provider = _env("AI_PROVIDER", "CHAT_PROVIDER", default="flowise")
+    _legacy_provider = _env("AI_PROVIDER", "CHAT_PROVIDER")
     if _orchestrator_raw:
         ORCHESTRATOR = _orchestrator_raw.lower()
-    else:
-        _mapped = (_legacy_provider or "flowise").lower()
+    elif _legacy_provider:
+        _mapped = _legacy_provider.lower()
         if _mapped == "openrouter":
             ORCHESTRATOR = "direct_llm"
             logger.warning(
@@ -58,12 +58,13 @@ class Config:
             )
         else:
             ORCHESTRATOR = _mapped
-            if os.environ.get("AI_PROVIDER") or os.environ.get("CHAT_PROVIDER"):
-                logger.warning(
-                    "AI_PROVIDER/CHAT_PROVIDER is deprecated; "
-                    "use ORCHESTRATOR=%s instead.",
-                    ORCHESTRATOR,
-                )
+            logger.warning(
+                "AI_PROVIDER/CHAT_PROVIDER is deprecated; "
+                "use ORCHESTRATOR=%s instead.",
+                ORCHESTRATOR,
+            )
+    else:
+        ORCHESTRATOR = "langgraph"
 
     # Kept for health JSON compatibility for one release.
     AI_PROVIDER = "openrouter" if ORCHESTRATOR == "direct_llm" else ORCHESTRATOR

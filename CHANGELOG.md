@@ -9,24 +9,30 @@ promise API or deploy-surface stability.
 
 ## [Unreleased] — 0.2.0
 
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) EOL **31 August 2026**. This release defaults to bundled LangGraph. `ORCHESTRATOR=flowise` remains as a deprecated opt-in for one release.
+
 ### Breaking
 
 - Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (re-point LINE WORKS and DingTalk callback URLs).
+- **Default orchestrator is now `langgraph`** when `ORCHESTRATOR` and legacy `AI_PROVIDER` / `CHAT_PROVIDER` are unset (was implicit Flowise).
 - Prefer `ORCHESTRATOR` over `AI_PROVIDER` / `CHAT_PROVIDER` (deprecated aliases still work for one release).
 - LangGraph with `STATE_BACKEND=memory` requires a single Cloud Run instance (`--min-instances=1 --max-instances=1`); conversation state is not shared across replicas.
 - LangGraph fails process startup if MCP discovery fails, an allowlisted tool is missing from the server, or no usable tools remain.
+- Startup validation requires orchestrator credentials on first container boot (deploy-then-configure in Cloud Run console no longer works for LangGraph).
 
 ### Added
 
 - Orchestration Interface with typed failures and async bridging
-- Bundled LangGraph orchestrator (`ORCHESTRATOR=langgraph`) with MCP allowlist and in-memory checkpointer
+- Bundled LangGraph orchestrator (`ORCHESTRATOR=langgraph`, default) with MCP allowlist and in-memory checkpointer
 - `MCP_TOOL_ALLOWLIST` env override (`*` allow-all; missing names fail startup)
 - LangGraph honors `LLM_SYSTEM_PROMPT` when set (unset keeps the Workday prompt + datetime), `LLM_MESSAGE_WINDOW` (default 20), and `LLM_REASONING_EFFORT`
 - LangGraph and Direct LLM use the OpenAI Chat Completions API only (`POST {LLM_BASE_URL}/chat/completions`)
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
 - Feishu (Lark) channel adapter (`/feishu/callback`)
-- In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash) so platform retries do not double-call the orchestrator
+- In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash) with `release()` on failed deliveries
+- LangGraph `asyncio.wait_for` around graph invoke; timeout surfaces as user-facing message
+- Architecture diagram (`docs/assets/architecture.png`) for LangGraph-first hub-and-spoke design
 
 ## [0.1.0] — 2026-08-07
 

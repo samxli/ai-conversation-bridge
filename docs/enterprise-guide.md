@@ -10,6 +10,8 @@
 
 ---
 
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. New deployments should use bundled **LangGraph** (`ORCHESTRATOR=langgraph`).
+
 Recommendations for teams moving the AI Conversation Bridge from prototype to production. This guide covers what comes next.
 
 > **Start here:** The two highest-leverage steps are infrastructure choices, not code changes.
@@ -20,16 +22,9 @@ Recommendations for teams moving the AI Conversation Bridge from prototype to pr
 
 The `mcp-demo-server/` in this repo is a mock with static JSON data and no authentication. Production deployments should connect to **Workday's official MCP servers** (e.g., Workday Agent Gateway), which provide real data access, OAuth 2.1 / mTLS authentication, audit logging, and compliance controls.
 
-- **Flowise path:** update the MCP server URL in your Flowise flow's Custom MCP tool.
-- **LangGraph path:** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production. `MCP_TOOL_ALLOWLIST` defaults to the bundled safe list; use a comma-separated list for a narrower set. `MCP_TOOL_ALLOWLIST=*` exposes every discovered tool and should be limited to controlled testing. Startup fails if the MCP server is unreachable, an allowlisted tool is missing, or no usable tools remain.
-
-### Use Flowise Cloud Enterprise
-
-Self-hosting Flowise works for prototyping, but [Flowise Cloud Enterprise](https://flowiseai.com/) offers SSO, role-based access control, audit trails, encryption at rest, and SLA-backed uptime — a significantly stronger posture for regulated industries. For countries with stricter data residency requirements (e.g., China, certain ASEAN markets), self-hosting Flowise in-region remains a valid production approach.
+- **LangGraph path (default):** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production. `MCP_TOOL_ALLOWLIST` defaults to the bundled safe list; use a comma-separated list for a narrower set. `MCP_TOOL_ALLOWLIST=*` exposes every discovered tool and should be limited to controlled testing. Startup fails if the MCP server is unreachable, an allowlisted tool is missing, or no usable tools remain.
 
 ### Conversation-state retention and erasure
-
-On the Flowise path, conversation memory lives in the customer's Flowise instance — apply that product's retention controls.
 
 On the LangGraph path with `STATE_BACKEND=memory`, the bridge checkpointer keeps thread state **in process memory** for the life of the instance. That state includes user messages and tool results, which can contain HR data (leave balances, personal information, worker IDs). Treat it as regulated data:
 
@@ -47,17 +42,17 @@ The bridge service logs user IDs and message metadata. In production, log output
 
 ### Rate Limiting
 
-The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, `/feishu/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (Flowise, LLM provider, or chat platform APIs). Add per-IP and per-user rate limits at the bridge service layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
+The channel callback endpoints (`/lineworks/callback`, `/dingtalk/callback`, `/feishu/callback`, and the legacy LINE WORKS `/callback` alias) are publicly accessible. Without rate limiting, a misconfigured webhook or abuse scenario can exhaust downstream quotas (LLM provider or chat platform APIs). Add per-IP and per-user rate limits at the bridge service layer. For multi-instance deployments, back the rate limiter with a shared store (e.g., Redis) rather than in-memory counters.
 
 Inbound webhook retries are suppressed in-process by an `IdempotencyStore` (Feishu `message_id`, DingTalk `msgId`, LINE WORKS SHA-256 of the raw body) with a 6-hour TTL. That does not span Cloud Run replicas — use a shared SET NX store if you raise `--max-instances`.
 
 ### Model Selection and Temperature
 
-The reference flow uses a free-tier model (`openrouter/free`). Free-tier models have aggressive rate limits (often 10-20 RPM) that will cause failures under real load. Switch to a paid model with strong function-calling support. Set temperature to near-0 for tool-calling agents — higher temperatures introduce non-determinism in intent recognition and tool argument generation, leading to hallucinated parameters or skipped tool calls.
+The reference deployment uses a free-tier model (`openrouter/free`). Free-tier models have aggressive rate limits (often 10-20 RPM) that will cause failures under real load. Switch to a paid model with strong function-calling support. Set temperature to near-0 for tool-calling agents — higher temperatures introduce non-determinism in intent recognition and tool argument generation, leading to hallucinated parameters or skipped tool calls.
 
 ### Structured Output Schemas
 
-Without output constraints, the LLM can return responses in unpredictable formats. Flowise supports structured output schemas on the Agent node that force the LLM to conform to a defined shape. Consider including a `data_source` field (tool result vs. general knowledge) so downstream consumers can detect when the LLM answered from its own knowledge rather than from a Workday tool.
+Without output constraints, the LLM can return responses in unpredictable formats. Consider constraining LangGraph output (for example via response schemas or post-validation) and including a `data_source` field (tool result vs. general knowledge) so downstream consumers can detect when the LLM answered from its own knowledge rather than from a Workday tool.
 
 ### User-to-Worker Identity Mapping
 
@@ -69,11 +64,11 @@ The demo server uses a single `CURRENT_USER_WORKER_ID` for all requests. In prod
 
 ### Retry Logic with Backoff
 
-Transient failures (network blips, 502/503 from Flowise, token refresh races) are inevitable. Add retry logic with exponential backoff to outbound HTTP calls in the bridge service. Avoid retrying on `429` responses — those indicate you need to address rate limits at the provider level, not mask them with retries.
+Transient failures (network blips, 502/503 from the LLM provider, token refresh races) are inevitable. Add retry logic with exponential backoff to outbound HTTP calls in the bridge service. Avoid retrying on `429` responses — those indicate you need to address rate limits at the provider level, not mask them with retries.
 
 ### Correlation IDs and Structured Logging
 
-When a user reports "the bot didn't respond," you need to trace a single request across the bridge service, Flowise, and MCP pipeline. Generate a request ID at the channel callback entry point, propagate it as an HTTP header through downstream calls, and attach it to all log entries. Structured JSON logging (rather than plain text) makes these traces queryable in Cloud Run, CloudWatch, and similar platforms.
+When a user reports "the bot didn't respond," you need to trace a single request across the bridge service, LangGraph, and MCP pipeline. Generate a request ID at the channel callback entry point, propagate it as an HTTP header through downstream calls, and attach it to all log entries. Structured JSON logging (rather than plain text) makes these traces queryable in Cloud Run, CloudWatch, and similar platforms.
 
 ### Prompt Injection Defenses
 
@@ -85,11 +80,11 @@ Users (or attackers replaying webhook payloads) can craft messages that attempt 
 
 ### Observability (Tracing and Metrics)
 
-Add distributed tracing and metrics across the bridge service, Flowise, and MCP pipeline. This enables end-to-end latency visibility, error rate alerting, and the ability to diagnose issues before users report them.
+Add distributed tracing and metrics across the bridge service, LangGraph, and MCP pipeline. This enables end-to-end latency visibility, error rate alerting, and the ability to diagnose issues before users report them.
 
 ### Circuit Breakers
 
-If Flowise is down or consistently erroring, a circuit breaker pattern lets the bridge service fail fast with a user-friendly message rather than waiting for timeouts on every request. After a cooldown period, the breaker allows a probe request to check if the service has recovered.
+If the LLM or MCP endpoint is down or consistently erroring, a circuit breaker pattern lets the bridge service fail fast with a user-friendly message rather than waiting for timeouts on every request. After a cooldown period, the breaker allows a probe request to check if the service has recovered.
 
 ### Output Content Filtering
 

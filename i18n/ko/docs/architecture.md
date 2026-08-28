@@ -12,7 +12,7 @@
 
 ## 개요
 <p align="center">
-   <img width="900" height="490" alt="전체 아키텍처" src="https://github.com/user-attachments/assets/cdd3bcc0-ece8-48ab-9631-0006513cb5a8" />
+   <img width="900" alt="전체 아키텍처" src="../../../docs/assets/architecture.png" />
 </p>
 
 AI Conversation Bridge는 AI 기반 오케스트레이션으로 기업용 메시징 플랫폼을 Workday에 연결하는 참조 아키텍처입니다. APJ(아시아 태평양 및 일본) 지역의 네 가지 핵심 과제를 다룹니다.

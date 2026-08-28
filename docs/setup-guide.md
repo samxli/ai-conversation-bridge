@@ -10,6 +10,8 @@
 
 ---
 
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. This guide defaults to **LangGraph**. See [Deprecated Flowise path](#deprecated-flowise-path) only if you still self-host from the [archived repository](https://github.com/FlowiseAI/Flowise).
+
 This guide walks through setting up each component of the AI Conversation Bridge.
 
 > **Important:** All components must be deployed to **public-facing cloud environments** so they can communicate with each other and receive webhooks from external platforms. This guide uses Google Cloud Run as the example, but any container platform with a public HTTPS endpoint works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).
@@ -17,14 +19,14 @@ This guide walks through setting up each component of the AI Conversation Bridge
 ## Prerequisites
 
 - A container hosting platform with public URLs (e.g., [Google Cloud Run](https://cloud.google.com/run))
-- A Flowise instance ([cloud](https://flowiseai.com/) or [self-hosted](#self-hosting-flowise) on public-facing infrastructure)
+- OpenAI Chat Completions credentials (`LLM_API_KEY`; optional `LLM_BASE_URL` for OpenRouter or compatible proxies)
 - LINE WORKS Developer Console access and/or DingTalk Developer Console access (for bot credentials)
 
 ## 1. Demo MCP Server
 
-The demo MCP server provides mock Workday tools for development and testing. Like the bridge service, it should be **deployed to a cloud environment** (e.g., Google Cloud Run) so that your Flowise instance can reach it. If you use a different provider (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.), adapt the deployment commands accordingly.
+The demo MCP server provides mock Workday tools for development and testing. Deploy it to a cloud environment (e.g., Google Cloud Run) so the bridge service can reach it at `MCP_SERVER_URL`.
 
-> **Production note:** The demo MCP server is for development only and has no authentication. In production, configure your Flowise flow's MCP client node to point to **Workday's official MCP endpoints** via Agent Gateway, which provides OAuth 2.1, mTLS, and other enterprise security controls. See the [Production Security](../mcp-demo-server/README.md#production-security) section for details.
+> **Production note:** The demo MCP server is for development only and has no authentication. In production, set `MCP_SERVER_URL` on the bridge to **Workday's official MCP endpoints** via Agent Gateway (OAuth 2.1, mTLS, and other enterprise controls). See the [Production Security](../mcp-demo-server/README.md#production-security) section for details.
 
 ### Deploy to Cloud Run
 
@@ -33,37 +35,13 @@ gcloud run deploy mcp-demo-server \
   --source mcp-demo-server
 ```
 
-After deployment, Cloud Run provides a public URL (e.g., `https://mcp-demo-server-abc123.us-west1.run.app`). Use this URL when configuring the Flowise MCP client node.
+After deployment, Cloud Run provides a public URL (e.g., `https://mcp-demo-server-abc123.us-west1.run.app`). Set `MCP_SERVER_URL` to that URL **with the `/mcp` path**.
 
 ### Verify
 
 The MCP server exposes tools via streamable HTTP transport at the `/mcp` path. You can connect to it from any MCP client (Flowise, Claude Desktop, etc.) at your deployed URL (e.g., `https://mcp-demo-server-abc123.us-west1.run.app/mcp`).
 
-## 2. Flowise Flow
-
-### Import the Flow
-
-1. Open your Flowise instance
-2. Navigate to **Agent Flows** → **Add New**
-3. Click **Settings** (⚙️) → **Load Agentflow**
-4. Select `flowise/flows/workday-mcp-agent.json`
-
-### Configure the Agent Node
-
-After importing, click the **AI Bridge Agent** node and configure:
-
-1. **Model** — The flow defaults to OpenRouter with the free `openrouter/free` model router. Add an OpenRouter credential in Flowise, or switch to any other provider with your own API key. Good choices for APJ include Z.ai GLM, Qwen/Alibaba (Tongyi Qianwen), and DeepSeek for China-hosted deployments, or OpenAI, Anthropic, and Gemini elsewhere.
-2. **Custom MCP Tool** — Update the MCP server URL in the tool configuration:
-   - **Demo:** Your deployed demo MCP server URL + `/mcp` (e.g., `https://mcp-demo-server-abc123.us-west1.run.app/mcp`). For the demo server, you can omit the `Authorization` header.
-   - **Production:** Your Workday Agent Gateway URL (replace the demo server with Workday's official MCP endpoints, which require proper authentication)
-
-### Get the Prediction URL
-
-1. Click the flow's **API Endpoint** button
-2. Copy the prediction URL (e.g., `https://your-flowise.com/api/v1/prediction/<flow-id>`)
-3. You'll need this for the bridge service configuration
-
-## 3. Conversation Bridge Service
+## 2. Conversation Bridge Service
 
 The bridge service receives webhooks from messaging platforms, so it **must be deployed to a public-facing environment** with an HTTPS URL. This guide uses Google Cloud Run as the example. If you use a different provider (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.), adapt the deployment commands accordingly.
 
@@ -71,33 +49,30 @@ The bridge service receives webhooks from messaging platforms, so it **must be d
 
 | `ORCHESTRATOR` | When to use it | Required settings |
 | --- | --- | --- |
-| `flowise` (default) | Visual Flowise flows; MCP configured in Flowise | `FLOWISE_API_URL` |
-| `langgraph` | Bundled code-first agent; MCP called from the bridge; LLM via OpenAI Chat Completions | `LLM_API_KEY`, `MCP_SERVER_URL` |
+| `langgraph` (default) | Bundled code-first agent; MCP called from the bridge; LLM via OpenAI Chat Completions | `LLM_API_KEY`, `MCP_SERVER_URL` |
 | `direct_llm` | Demo chat without tools; same Chat Completions API | `LLM_API_KEY` |
+| `flowise` (deprecated) | Legacy self-hosted Flowise only; EOL 31 Aug 2026 | `FLOWISE_API_URL` |
 
-Legacy `AI_PROVIDER` / `CHAT_PROVIDER` (`flowise` or `openrouter`) still work when `ORCHESTRATOR` is unset; prefer `ORCHESTRATOR`.
+Set `ORCHESTRATOR` explicitly when migrating from 0.1.0. Legacy `AI_PROVIDER` / `CHAT_PROVIDER` still map when `ORCHESTRATOR` is unset.
 
 ### Configuration
 
 Prepare your environment variables. You can use `bridge-service/.env.example` as a reference:
 
 ```bash
-# Flowise path (default)
-ORCHESTRATOR=flowise
-FLOWISE_API_URL=https://your-flowise.com/api/v1/prediction/<flow-id>
-FLOWISE_API_KEY=your-flowise-api-key
+# LangGraph path (default)
+ORCHESTRATOR=langgraph
+LLM_API_KEY=your-openrouter-or-compatible-key
+LLM_MODEL=openrouter/free
+LLM_BASE_URL=https://openrouter.ai/api/v1   # Chat Completions root (…/v1)
+LLM_MESSAGE_WINDOW=20
+MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
+STATE_BACKEND=memory
 
-# Or LangGraph path:
-# ORCHESTRATOR=langgraph
-# LLM_API_KEY=your-openrouter-or-compatible-key
-# LLM_MODEL=openrouter/free
-# LLM_BASE_URL=https://openrouter.ai/api/v1   # Chat Completions root (…/v1)
-# LLM_MESSAGE_WINDOW=20
-# LLM_REASONING_EFFORT=
-# MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
-# MCP_AUTH_HEADER=Bearer your-mcp-token
-# MCP_TOOL_ALLOWLIST=find_employee_id_by_name,get_current_user_info
-# STATE_BACKEND=memory
+# Deprecated Flowise path:
+# ORCHESTRATOR=flowise
+# FLOWISE_API_URL=https://your-flowise.com/api/v1/prediction/<flow-id>
+# FLOWISE_API_KEY=your-flowise-api-key
 
 # LINE WORKS bot credentials
 LW_API_20_CLIENT_ID=your-client-id
@@ -145,11 +120,21 @@ models work only through a Chat Completions proxy (for example OpenRouter).
 ### Deploy to Cloud Run
 
 ```bash
-gcloud run deploy bridge-service \
-  --source bridge-service
+LLM_API_KEY=your-key \
+MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp \
+  ./scripts/deploy-cloud-run.sh
 ```
 
-> **Important:** Don't forget to set your environment variables in the Cloud Run console after deploying! Configure `ORCHESTRATOR` and the matching credentials (see `bridge-service/.env.example`) as well as channel connector credentials.
+Or pass env vars on the **first** revision (required — startup validation fails without `LLM_API_KEY` and `MCP_SERVER_URL`):
+
+```bash
+gcloud run deploy bridge-service \
+  --source bridge-service \
+  --min-instances=1 --max-instances=1 --concurrency=8 \
+  --set-env-vars "ORCHESTRATOR=langgraph,LLM_API_KEY=your-key,MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp"
+```
+
+LangGraph has been exercised on Cloud Run at **256Mi**; the deploy script does not pin memory. Also set channel connector credentials (see `bridge-service/.env.example`).
 
 After deployment, Cloud Run provides a public URL (e.g., `https://bridge-service-abc123.us-west1.run.app`). You'll use this as your webhook URL.
 
@@ -158,7 +143,7 @@ For sensitive values like `LW_API_20_PRIVATEKEY`, consider using [Google Secret 
 ```bash
 gcloud run deploy bridge-service \
   --source bridge-service \
-  --set-env-vars "ORCHESTRATOR=flowise,FLOWISE_API_URL=..." \
+  --set-env-vars "ORCHESTRATOR=langgraph,LLM_API_KEY=...,MCP_SERVER_URL=..." \
   --set-secrets "LW_API_20_PRIVATEKEY=lw-private-key:latest"
 ```
 
@@ -240,8 +225,8 @@ Webhook retry dedup (`message_id` / `msgId` / LINE WORKS body hash) is the same 
 
 The reference `scripts/deploy-cloud-run.sh` therefore pins Cloud Run to `--min-instances=1 --max-instances=1 --concurrency=8`. Keep `ORCHESTRATOR_TIMEOUT` (default 240) below the Gunicorn timeout so typed failures return before the worker is killed.
 
-For Flowise-only deployments that do not rely on in-process memory, you may raise max instances later; for LangGraph + memory, stay on a single instance until a durable checkpointer is added.
+For LangGraph with `STATE_BACKEND=memory`, stay on a single instance until a durable checkpointer is added.
 
-## Self-Hosting Flowise
+## Deprecated Flowise path
 
-If you prefer to host your own Flowise instance instead of using [Flowise Cloud](https://flowiseai.com/), it must be deployed to **public-facing infrastructure** so that the bridge service can reach its prediction API. Deploy Flowise to Cloud Run, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, a VM with a public IP, or any platform that provides an HTTPS endpoint. See the [Flowise self-hosting documentation](https://docs.flowiseai.com/configuration/deployment) for deployment options.
+Flowise reached EOL on 31 August 2026 ([announcement](https://flowiseai.com/sunset)). Fork the [archived repository](https://github.com/FlowiseAI/Flowise) if you must continue self-hosting. Set `ORCHESTRATOR=flowise` and `FLOWISE_API_URL` on the bridge. See [flowise/README.md](../flowise/README.md) for the legacy flow import steps.

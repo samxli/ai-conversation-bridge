@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from langchain_core.messages import HumanMessage
@@ -57,10 +58,14 @@ class LangGraphOrchestrator:
             )
 
         config = {"configurable": {"thread_id": request.session_id}}
+        timeout = float(self.config.ORCHESTRATOR_TIMEOUT)
         try:
-            result = await self._graph.ainvoke(
-                {"messages": [HumanMessage(content=request.message)], "iterations": 0},
-                config=config,
+            result = await asyncio.wait_for(
+                self._graph.ainvoke(
+                    {"messages": [HumanMessage(content=request.message)], "iterations": 0},
+                    config=config,
+                ),
+                timeout=timeout,
             )
             text = extract_final_text(result.get("messages", []))
             if not text:
@@ -71,7 +76,11 @@ class LangGraphOrchestrator:
                 )
             return OrchestrationResult(text=text)
         except TimeoutError as e:
-            return OrchestrationResult(text=None, failure=FailureCode.TIMEOUT, detail=str(e))
+            return OrchestrationResult(
+                text=None,
+                failure=FailureCode.TIMEOUT,
+                detail=f"LangGraph timed out after {timeout}s: {e}",
+            )
         except Exception as e:
             detail = f"LangGraph invoke failed ({type(e).__name__}): {e}"
             logger.error(detail)

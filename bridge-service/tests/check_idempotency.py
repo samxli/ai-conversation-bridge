@@ -34,6 +34,9 @@ def main() -> None:
     # max_entries=2 evicted the oldest still-valid key
     assert store.claim("feishu:om_1") is True
 
+    store.release("feishu:om_2")
+    assert store.claim("feishu:om_2") is True
+
     short = IdempotencyStore(ttl_seconds=0.05, max_entries=8)
     assert short.claim("k") is True
     time.sleep(0.06)

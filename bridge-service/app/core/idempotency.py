@@ -33,6 +33,11 @@ class IdempotencyStore:
                 self._entries.popitem(last=False)
             return True
 
+    def release(self, key: str) -> None:
+        """Drop a claimed key so a failed delivery can be retried."""
+        with self._lock:
+            self._entries.pop(key, None)
+
     def _purge(self, now: float) -> None:
         """Drop expired keys from the oldest end of the map."""
         while self._entries:

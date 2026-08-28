@@ -10,6 +10,7 @@ from app.core.messages import user_message_for
 from app.core.prompt_security import wrap_user_input
 from app.core.response_validator import ResponseValidator
 from app.orchestration.base import OrchestrationRequest
+from app.orchestration.errors import FailureCode
 
 bp = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -26,16 +27,30 @@ def health():
     }), 200
 
 
+def orchestration_message(user_text: str) -> str:
+    """Wrap user text for orchestrators that use prompt-injection guardrails."""
+    if Config.ORCHESTRATOR in ("langgraph", "direct_llm"):
+        return wrap_user_input(user_text)
+    return user_text
+
+
 def get_ai_response(user_text: str, session_id: str) -> str:
     """Invoke the configured orchestrator and validate the response."""
     orchestrator = current_app.extensions['orchestrator']
     timeout = float(current_app.extensions.get('orchestrator_timeout', Config.FLOWISE_TIMEOUT))
-    result = async_runner.run_coroutine(
-        orchestrator.invoke(
-            OrchestrationRequest(message=wrap_user_input(user_text), session_id=session_id)
-        ),
-        timeout=timeout + 30.0,
-    )
+    try:
+        result = async_runner.run_coroutine(
+            orchestrator.invoke(
+                OrchestrationRequest(
+                    message=orchestration_message(user_text),
+                    session_id=session_id,
+                )
+            ),
+            timeout=timeout + 30.0,
+        )
+    except TimeoutError:
+        logger.error("Orchestration timed out after %.0fs", timeout + 30.0)
+        return user_message_for(FailureCode.TIMEOUT)
     if result.failure is not None:
         logger.error(
             "Orchestration failure code=%s detail=%s",
@@ -53,6 +68,13 @@ def get_ai_response(user_text: str, session_id: str) -> str:
 def message_too_long_response() -> str:
     """Return the user-facing error message for over-length messages."""
     return f"Your message is too long. Please keep it under {Config.MAX_MESSAGE_LENGTH} characters."
+
+
+def release_delivery(key: str | None) -> None:
+    """Allow a failed delivery to be retried by the chat platform."""
+    if not key:
+        return
+    current_app.extensions['idempotency'].release(key)
 
 
 def is_duplicate_delivery(key: str | None) -> bool:
@@ -107,20 +129,25 @@ def lineworks_callback():
             current_app.logger.error("Missing one or more LINE WORKS environment variables.")
             return 'Internal Server Error', 500
 
-        if is_duplicate_delivery(lineworks_adapter.idempotency_key(raw_body)):
+        delivery_key = lineworks_adapter.idempotency_key(raw_body)
+        if is_duplicate_delivery(delivery_key):
             return 'OK', 200
 
-        ai_response_text = get_ai_response(message.text, session_id=message.session_id)
+        try:
+            ai_response_text = get_ai_response(message.text, session_id=message.session_id)
 
-        reply_content = {
-            "content": {
-                "type": "text",
-                "text": ai_response_text
+            reply_content = {
+                "content": {
+                    "type": "text",
+                    "text": ai_response_text
+                }
             }
-        }
 
-        lw_client.send_message(message.reply_target, reply_content)
-        current_app.logger.info(f"Sent reply to user {message.sender_id}")
+            lw_client.send_message(message.reply_target, reply_content)
+            current_app.logger.info(f"Sent reply to user {message.sender_id}")
+        except Exception:
+            release_delivery(delivery_key)
+            raise
 
         return 'OK', 200
 
@@ -150,7 +177,8 @@ def dingtalk_callback():
             current_app.logger.info(reason)
             return 'OK', 200
 
-        if is_duplicate_delivery(dingtalk_adapter.idempotency_key(data)):
+        delivery_key = dingtalk_adapter.idempotency_key(data)
+        if is_duplicate_delivery(delivery_key):
             return 'OK', 200
 
         if dingtalk_adapter.is_over_length(message):
@@ -161,9 +189,13 @@ def dingtalk_callback():
             dingtalk_client.send_text(message.reply_target, message_too_long_response())
             return 'OK', 200
 
-        ai_response_text = get_ai_response(message.text, session_id=message.session_id)
-        dingtalk_client.send_text(message.reply_target, ai_response_text)
-        current_app.logger.info(f"Sent DingTalk reply to user {message.sender_id}")
+        try:
+            ai_response_text = get_ai_response(message.text, session_id=message.session_id)
+            dingtalk_client.send_text(message.reply_target, ai_response_text)
+            current_app.logger.info(f"Sent DingTalk reply to user {message.sender_id}")
+        except Exception:
+            release_delivery(delivery_key)
+            raise
 
         return 'OK', 200
 
@@ -219,7 +251,8 @@ def feishu_callback():
                 logger.error("Feishu configuration incomplete")
                 return jsonify({"code": 0, "msg": "ok"}), 200
 
-            if is_duplicate_delivery(feishu_adapter.idempotency_key(event)):
+            delivery_key = feishu_adapter.idempotency_key(event)
+            if is_duplicate_delivery(delivery_key):
                 return jsonify({"code": 0, "msg": "ok"}), 200
 
             if feishu_adapter.is_over_length(message):
@@ -237,6 +270,7 @@ def feishu_callback():
                 if isinstance(send_result, dict) and send_result.get("code") != 0:
                     logger.error("Feishu send returned error payload: %s", send_result)
             except Exception as e:
+                release_delivery(delivery_key)
                 logger.error("Feishu error while processing message: %s", e)
                 try:
                     feishu_client.send_text_to_chat(
