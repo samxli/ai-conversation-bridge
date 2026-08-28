@@ -33,9 +33,11 @@ This guide walks through installing, configuring, and verifying the AI Conversat
 
 Set `ORCHESTRATOR` explicitly when migrating from v0.1.0. Legacy `AI_PROVIDER` / `CHAT_PROVIDER` still map when `ORCHESTRATOR` is unset.
 
-Variable reference: [bridge-service/.env.example](../bridge-service/.env.example).
+Variable reference: [bridge-service/.env.example](../bridge-service/.env.example) (catalog of names; **not** read by Cloud Run).
 
 ## Local smoke test (optional)
+
+`bridge-service/.env` is used **only** by Docker Compose — not by `gcloud run deploy`.
 
 ```bash
 ./scripts/setup.sh
@@ -55,29 +57,41 @@ Compose is for build/log inspection. Chat webhooks still need a public URL in re
 ### 1. Deploy both services
 
 ```bash
-export REGION=us-west1
-export LLM_API_KEY=your-openrouter-key
-# Optional if MCP is already deployed:
-# export MCP_SERVER_URL=https://mcp-demo-server-....run.app/mcp
+REGION=us-west1
 
-./scripts/deploy-cloud-run.sh "$REGION"
+# Demo MCP server (no secrets)
+gcloud run deploy mcp-demo-server \
+  --source mcp-demo-server \
+  --region "$REGION" \
+  --allow-unauthenticated
+
+# Bridge — first revision only (LangGraph needs LLM_API_KEY + MCP_SERVER_URL to boot)
+gcloud run deploy bridge-service \
+  --source bridge-service \
+  --region "$REGION" \
+  --allow-unauthenticated \
+  --max-instances=1 \
+  --concurrency=8 \
+  --set-env-vars "LLM_API_KEY=your-openrouter-key,MCP_SERVER_URL=https://<mcp-service-url>/mcp"
 ```
 
-The script deploys `mcp-demo-server`, derives `MCP_SERVER_URL` when omitted, then deploys `bridge-service` with LangGraph env on the **first** revision.
+**Helper script** (derives `MCP_SERVER_URL` after MCP deploy):
 
-**Defaults note:** unset `LLM_BASE_URL` / `LLM_MODEL` send requests to OpenRouter (`openrouter/free`). For OpenAI, set all three: key, `https://api.openai.com/v1`, and your model name.
+```bash
+LLM_API_KEY=your-openrouter-key ./scripts/deploy-cloud-run.sh "$REGION"
+```
+
+`--max-instances=1` keeps in-memory conversation state on one replica. `--concurrency=8` matches gunicorn `--threads 8` in the bridge Dockerfile.
+
+**Defaults note:** unset `LLM_BASE_URL` / `LLM_MODEL` send requests to OpenRouter (`openrouter/free`). Set those in the Cloud Run console if you use OpenAI or another provider.
 
 ### 2. Add channel credentials
 
-Use `--update-env-vars` or `--update-secrets`. Do **not** rerun deploy with bare `--set-env-vars` on an existing service — that replaces every env var and can remove `LLM_API_KEY` / `MCP_SERVER_URL`.
+Use the Cloud Run console (**Variables & secrets**). You can also use `gcloud run services update --update-env-vars`.
 
-```bash
-gcloud run services update bridge-service \
-  --region "$REGION" \
-  --update-env-vars "DINGTALK_ALLOWED_USERS=your-staff-id,FEISHU_VERIFICATION_TOKEN=...,FEISHU_APP_ID=...,FEISHU_APP_SECRET=..."
-```
+Do **not** rerun the first deploy command with `--set-env-vars` — that replaces every env var and removes console edits.
 
-For `LW_API_20_PRIVATEKEY`, prefer Secret Manager:
+For `LW_API_20_PRIVATEKEY`, prefer Secret Manager in the console or:
 
 ```bash
 gcloud run services update bridge-service \
@@ -86,17 +100,6 @@ gcloud run services update bridge-service \
 ```
 
 ### 3. Verify
-
-**MCP initialize** (replace URL):
-
-```bash
-curl -sS -X POST "https://<mcp-service-url>/mcp" \
-  -H 'Content-Type: application/json' \
-  -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
-```
-
-Expect a JSON-RPC `result` with `serverInfo`.
 
 **Bridge health:**
 
@@ -117,7 +120,15 @@ Expect tool discovery logs and no `startup failed`.
 
 Send one real chat message to confirm delivery.
 
-### 4. Connect a chat platform
+### 4. Redeploy code only
+
+After channel vars are in the console, push new bridge code without touching env:
+
+```bash
+gcloud run deploy bridge-service --source bridge-service --region "$REGION"
+```
+
+### 5. Connect a chat platform
 
 - LINE WORKS: `<bridge-url>/lineworks/callback` (legacy `/callback` still works)
 - DingTalk: `<bridge-url>/dingtalk/callback`
@@ -128,7 +139,7 @@ Send one real chat message to confirm delivery.
 - Leave `MCP_TOOL_ALLOWLIST` unset to use the built-in **reference allowlist** (includes mock read tools and `request_my_time_off`). It is not a security boundary.
 - `LLM_MESSAGE_WINDOW` limits model input for each turn; the in-memory checkpointer can still retain full thread history.
 - LangGraph fails startup if MCP is unreachable, an allowlisted tool name is missing, or zero tools remain.
-- With `STATE_BACKEND=memory`, use `--max-instances=1` so conversation state does not fragment across replicas. `--min-instances=1` is optional (reduces cold starts, adds cost) and does not make memory durable across restarts.
+- With `STATE_BACKEND=memory`, use `--max-instances=1` so conversation state does not fragment across replicas. `--concurrency=8` matches gunicorn `--threads 8`. `--min-instances=1` is optional (reduces cold starts, adds cost) and does not make memory durable across restarts.
 
 ## Direct LLM smoke test
 
@@ -148,7 +159,7 @@ No `MCP_SERVER_URL` required.
 ### LINE WORKS
 
 1. Create a bot in the [LINE WORKS Developer Console](https://developers.worksmobile.com/).
-2. Configure OAuth / service account credentials and map them to `LW_API_20_*` in `.env.example`.
+2. Configure OAuth / service account credentials and map them to `LW_API_20_*` (see `.env.example` for names; set values in the Cloud Run console).
 3. Set `LW_API_20_BOT_SECRET` in production — without it, signature verification is skipped with a warning.
 4. Set callback URL to `<bridge-url>/lineworks/callback`.
 
@@ -188,7 +199,7 @@ gcloud run services delete bridge-service --region "$REGION"
 gcloud run services delete mcp-demo-server --region "$REGION"
 ```
 
-`--min-instances=1` incurs idle cost. Remove it for experiments.
+`--min-instances=1` incurs idle cost if you set it in the console. Remove it for experiments.
 
 ## Deprecated Flowise path
 

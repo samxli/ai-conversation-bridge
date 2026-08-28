@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Deploy the AI Conversation Bridge services to Google Cloud Run.
+# First-time Cloud Run deploy helper.
 # Prerequisites: gcloud CLI authenticated and project configured.
 #
 # Usage:
@@ -9,14 +9,14 @@ set -e
 #
 # Optional: MCP_SERVER_URL=https://.../mcp (derived from mcp-demo-server deploy when omitted)
 #
-# bridge-service defaults to ORCHESTRATOR=langgraph and requires LLM_API_KEY and
-# MCP_SERVER_URL on the first revision (startup validation fails without them).
-# LangGraph at 256Mi on Cloud Run was sufficient in reference testing; memory is
-# not pinned here — raise it only if you OOM.
+# Sets only LLM_API_KEY and MCP_SERVER_URL on the first bridge revision (LangGraph boot
+# requirements). Add channel credentials in the Cloud Run console afterward.
 #
-# bridge-service is pinned to a single Cloud Run instance because the default
-# LangGraph STATE_BACKEND=memory does not share conversation state across
-# replicas (see docs/architecture.md and docs/enterprise-guide.md).
+# For code-only updates, redeploy WITHOUT --set-env-vars so console env vars are preserved:
+#   gcloud run deploy bridge-service --source bridge-service --region REGION
+#
+# --max-instances=1 keeps in-memory LangGraph state on one replica.
+# --concurrency=8 matches gunicorn --threads 8 in bridge-service/Dockerfile.
 
 REGION="${1:-us-west1}"
 REPO_ROOT="$(dirname "$0")/.."
@@ -27,7 +27,7 @@ if [[ -z "${LLM_API_KEY:-}" ]]; then
   exit 1
 fi
 
-echo "=== Deploying to Cloud Run (region: $REGION) ==="
+echo "=== First-time deploy to Cloud Run (region: $REGION) ==="
 echo ""
 
 echo "--- 1/2: mcp-demo-server ---"
@@ -44,40 +44,25 @@ if [[ -z "${MCP_SERVER_URL:-}" ]]; then
   echo "Derived MCP_SERVER_URL=${MCP_SERVER_URL}"
 fi
 
-BRIDGE_ENV="ORCHESTRATOR=langgraph,STATE_BACKEND=memory,LLM_API_KEY=${LLM_API_KEY},MCP_SERVER_URL=${MCP_SERVER_URL}"
-if [[ -n "${LLM_MODEL:-}" ]]; then
-  BRIDGE_ENV="${BRIDGE_ENV},LLM_MODEL=${LLM_MODEL}"
-fi
-if [[ -n "${LLM_BASE_URL:-}" ]]; then
-  BRIDGE_ENV="${BRIDGE_ENV},LLM_BASE_URL=${LLM_BASE_URL}"
-fi
-if [[ -n "${DINGTALK_ALLOWED_USERS:-}" ]]; then
-  BRIDGE_ENV="${BRIDGE_ENV},DINGTALK_ALLOWED_USERS=${DINGTALK_ALLOWED_USERS}"
-fi
-
 echo ""
-echo "--- 2/2: bridge-service ---"
-# Concurrency matches gunicorn --threads 8. min/max instances=1 keeps in-memory
-# session state coherent for the reference LangGraph path.
+echo "--- 2/2: bridge-service (first revision only) ---"
 gcloud run deploy bridge-service \
   --source "$REPO_ROOT/bridge-service" \
   --region "$REGION" \
   --allow-unauthenticated \
-  --min-instances=1 \
   --max-instances=1 \
   --concurrency=8 \
-  --set-env-vars "$BRIDGE_ENV"
+  --set-env-vars "LLM_API_KEY=${LLM_API_KEY},MCP_SERVER_URL=${MCP_SERVER_URL}"
 
 echo ""
 echo "=== Deployment Complete ==="
 echo "Next steps:"
-echo "  1. Add channel credentials with --update-env-vars (do not use bare --set-env-vars on"
-echo "     an existing service — that replaces all env vars):"
-echo "     gcloud run services update bridge-service --region $REGION \\"
-echo "       --update-env-vars DINGTALK_ALLOWED_USERS=your-staff-id"
+echo "  1. Add channel credentials in the Cloud Run console (Variables & secrets)."
+echo "     Do not rerun this script — --set-env-vars replaces all env vars."
 echo "  2. Verify: curl -sS https://<bridge-service-url>/"
-echo "  3. Set chat platform callbacks (service rename is a breaking change from chat-connector):"
+echo "  3. Set chat platform callbacks:"
 echo "     LINE WORKS: bridge-service URL + /lineworks/callback"
 echo "     DingTalk:   bridge-service URL + /dingtalk/callback"
 echo "     Feishu:     bridge-service URL + /feishu/callback"
-echo "  4. Deprecated Flowise path: set ORCHESTRATOR=flowise and FLOWISE_API_URL instead."
+echo "  4. Future code deploys (preserves console env vars):"
+echo "     gcloud run deploy bridge-service --source bridge-service --region $REGION"

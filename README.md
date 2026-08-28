@@ -76,26 +76,42 @@ Only the **bridge webhook URL** must be publicly reachable. Keep MCP and LLM end
 
 ### Deploy
 
+**`.env` is for local Docker Compose only.** Cloud Run reads env vars from the service configuration (console or `gcloud`), not from `bridge-service/.env`. See [bridge-service/.env.example](bridge-service/.env.example) for variable names.
+
 ```bash
 git clone https://github.com/Workday/ai-conversation-bridge.git
 cd ai-conversation-bridge
 
-export REGION=us-west1
-export LLM_API_KEY=your-openrouter-key
-# Optional if you already deployed MCP elsewhere:
-# export MCP_SERVER_URL=https://mcp-demo-server-....run.app/mcp
+REGION=us-west1
 
-./scripts/deploy-cloud-run.sh "$REGION"
+# 1) Demo MCP server (no secrets)
+gcloud run deploy mcp-demo-server \
+  --source mcp-demo-server \
+  --region "$REGION" \
+  --allow-unauthenticated
+
+# 2) Bridge — first revision only (LangGraph needs these two vars to boot)
+gcloud run deploy bridge-service \
+  --source bridge-service \
+  --region "$REGION" \
+  --allow-unauthenticated \
+  --max-instances=1 \
+  --concurrency=8 \
+  --set-env-vars "LLM_API_KEY=your-openrouter-key,MCP_SERVER_URL=https://<mcp-service-url>/mcp"
 ```
 
-The script deploys `mcp-demo-server`, derives `MCP_SERVER_URL` when omitted, then deploys `bridge-service` with LangGraph env on the first revision.
-
-Add channel credentials with **non-destructive** updates (do not use bare `--set-env-vars` on an existing service — it replaces all env vars):
+Or use the helper script (same first-time flow; derives `MCP_SERVER_URL` when omitted):
 
 ```bash
-gcloud run services update bridge-service \
-  --region "$REGION" \
-  --update-env-vars "DINGTALK_ALLOWED_USERS=your-staff-id"
+LLM_API_KEY=your-openrouter-key ./scripts/deploy-cloud-run.sh "$REGION"
+```
+
+**3)** Add LINE WORKS, DingTalk, and Feishu credentials in the Cloud Run console (**Variables & secrets**). Do not rerun step 2 with `--set-env-vars` — it replaces every env var.
+
+**4)** Later code-only deploys:
+
+```bash
+gcloud run deploy bridge-service --source bridge-service --region "$REGION"
 ```
 
 Point your chat platform at `https://<bridge-service-url>/lineworks/callback`, `/dingtalk/callback`, or `/feishu/callback`.

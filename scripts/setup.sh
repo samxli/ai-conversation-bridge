@@ -2,7 +2,7 @@
 set -e
 
 # Local development setup — creates .env files and builds containers for
-# smoke testing with Docker Compose. For cloud deployment, use deploy-cloud-run.sh.
+# smoke testing with Docker Compose. For cloud deployment, see docs/setup-guide.md.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -33,7 +33,7 @@ echo "This is a local development environment for smoke testing container builds
 echo "End-to-end testing requires cloud deployment (see deploy-cloud-run.sh)."
 echo ""
 echo "Next steps:"
-echo "  1. Edit bridge-service/.env with your credentials"
+echo "  1. Edit bridge-service/.env with your credentials (Compose only)"
 echo "  2. Run: docker compose up --build"
 echo "  3. Verify both services start without errors"
 echo ""
