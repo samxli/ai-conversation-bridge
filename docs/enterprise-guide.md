@@ -10,7 +10,7 @@
 
 ---
 
-> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. New deployments should use bundled **LangGraph** (`ORCHESTRATOR=langgraph`).
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) EOL date **31 August 2026**. New deployments should use bundled **LangGraph** (`ORCHESTRATOR=langgraph`).
 
 Recommendations for teams moving the AI Conversation Bridge from prototype to production. This guide covers what comes next.
 
@@ -22,7 +22,7 @@ Recommendations for teams moving the AI Conversation Bridge from prototype to pr
 
 The `mcp-demo-server/` in this repo is a mock with static JSON data and no authentication. Production deployments should connect to **Workday's official MCP servers** (e.g., Workday Agent Gateway), which provide real data access, OAuth 2.1 / mTLS authentication, audit logging, and compliance controls.
 
-- **LangGraph path (default):** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production. `MCP_TOOL_ALLOWLIST` defaults to the bundled safe list; use a comma-separated list for a narrower set. `MCP_TOOL_ALLOWLIST=*` exposes every discovered tool and should be limited to controlled testing. Startup fails if the MCP server is unreachable, an allowlisted tool is missing, or no usable tools remain.
+- **LangGraph path (default):** set `MCP_SERVER_URL` (and `MCP_AUTH_HEADER` when required) on the bridge service. With LangGraph selected, the bridge holds the LLM API key and MCP credential — treat them as secrets (Secret Manager / equivalent), not plain env files in production. `MCP_TOOL_ALLOWLIST` defaults to the bundled **reference allowlist** (includes mock read tools and `request_my_time_off`); use a comma-separated list for a narrower set. It is not a security boundary. `MCP_TOOL_ALLOWLIST=*` exposes every discovered tool and should be limited to controlled testing. Startup fails if the MCP server is unreachable, an allowlisted tool is missing, or no usable tools remain.
 
 ### Conversation-state retention and erasure
 

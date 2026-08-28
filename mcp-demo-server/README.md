@@ -12,7 +12,7 @@
 
 A lightweight MCP server with mock Workday tools for development and demo purposes. It provides a handful of common Workday actions — time-off requests, worker lookups, and employee data — backed by static sample data instead of a real Workday tenant.
 
-**This is not a production MCP server.** In production, your Flowise flow should connect to the official Workday MCP server endpoints via Agent Gateway, which provides authenticated access to the full Workday API surface.
+**This is not a production MCP server.** In production, point the bridge's LangGraph orchestrator (`MCP_SERVER_URL`) at official Workday MCP server endpoints via Agent Gateway, which provides authenticated access to the full Workday API surface.
 
 ## What's Included
 
@@ -49,15 +49,17 @@ For the full set of Workday capabilities, use the official Workday MCP server en
 
 ## Running
 
-Deploy the demo MCP server to a public-facing cloud environment (e.g., Google Cloud Run) so that Flowise can reach it. See the [Setup Guide](../docs/setup-guide.md) for deployment instructions.
+Deploy the demo MCP server so the bridge service can reach it (private network preferred; public demo deploys are common for quick tests). See the [Setup Guide](../docs/setup-guide.md) for deployment instructions.
 
 The server uses [FastMCP](https://gofastmcp.com/) with streamable HTTP transport by default, listening at the `/mcp` path.
 
-## Connecting from Flowise
+## Connecting from the bridge
 
-In your Flowise flow's MCP client node, set the server URL to your deployed MCP server's public URL + `/mcp`:
+Set `MCP_SERVER_URL` on the bridge service to your deployed MCP server's URL **including** `/mcp`:
 
 - **Cloud-hosted:** `https://mcp-demo-server-abc123.us-west1.run.app/mcp`
+
+LangGraph discovers tools at bridge startup and filters them through the reference allowlist (or `MCP_TOOL_ALLOWLIST`).
 
 ## Configuration
 
@@ -76,7 +78,15 @@ To add a new mock tool, add a function decorated with `@mcp.tool()` in `main.py`
 
 ## Production
 
-Replace this demo server with the official Workday MCP server endpoints via Agent Gateway. The tool names and schemas in this demo are illustrative — the real Workday MCP server will have its own tool definitions, authentication requirements, and data formats. Use this demo to build and test your Flowise flows, then swap the MCP server URL when connecting to a real Workday tenant.
+Replace this demo server with official Workday MCP server endpoints via Agent Gateway. **This is not a URL swap.** Plan for:
+
+1. Tool discovery on the production endpoint
+2. Updating `MCP_TOOL_ALLOWLIST` and prompts for real tool names/schemas
+3. Authentication (OAuth 2.1 / mTLS via Agent Gateway; `MCP_AUTH_HEADER` for static tokens today)
+4. Per-chat-user Workday identity — demo uses one global `CURRENT_USER_WORKER_ID`
+5. Disabling or gating write tools until authorization is verified
+
+The tool names and schemas in this demo are illustrative — the real Workday MCP server has its own definitions, authentication requirements, and data formats.
 
 ### Production Security
 
@@ -84,7 +94,7 @@ This demo server has **no authentication or authorization**. Production MCP serv
 
 - **OAuth 2.1 / mTLS** — Authenticate clients connecting to the MCP server. Workday Agent Gateway handles this for official endpoints.
 - **API keys or bearer tokens** — Gate access to specific tools and data. FastMCP supports bearer token auth out of the box for prototyping.
-- **Network policies** — Restrict which services can reach the MCP server (e.g., only your Flowise instance).
+- **Network policies** — Restrict which services can reach the MCP server (e.g., only the bridge service).
 - **Audit logging** — Track who called which tools and when.
 - **Data encryption** — Ensure all communication is over HTTPS/TLS in transit, and sensitive data is encrypted at rest.
 

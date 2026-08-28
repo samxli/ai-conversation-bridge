@@ -10,6 +10,8 @@
 
 ---
 
+> **Outdated translation:** This page has not been updated for v0.2.0. See the [English version](../../../docs/architecture.md).
+
 ## 개요
 <p align="center">
    <img width="900" alt="전체 아키텍처" src="../../../docs/assets/architecture.png" />

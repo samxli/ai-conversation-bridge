@@ -3,7 +3,8 @@ Brief description of the changes.
 
 ## Component(s) Changed
 - [ ] Bridge service
-- [ ] Flowise Flow
+- [ ] LangGraph orchestrator
+- [ ] Deprecated Flowise flow
 - [ ] Demo MCP Server
 - [ ] Documentation
 - [ ] CI/CD

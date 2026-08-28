@@ -10,6 +10,8 @@
 
 ---
 
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+
 AI駆動のオーケストレーションにより、企業向けメッセージングアプリ（LINE WORKS、WeChat（ウィーチャット）、Feishu（フィーシュー）など）をWorkdayに接続するリファレンスアーキテクチャです。ワーカーが日常的に使うアプリの中でAIを利用できることが求められる市場向けに設計されています。
 
 
@@ -67,7 +69,7 @@ APJを念頭に設計しましたが、自前のLLMやチャットプラット�
 ### 1. リポジトリをクローンする
 
 ```bash
-git clone https://github.com/your-org/ai-conversation-bridge.git
+git clone https://github.com/Workday/ai-conversation-bridge.git
 cd ai-conversation-bridge
 ```
 

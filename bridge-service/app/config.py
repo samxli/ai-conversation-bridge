@@ -98,7 +98,7 @@ class Config:
     STATE_BACKEND = os.environ.get("STATE_BACKEND", "memory").lower()
     MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL")
     MCP_AUTH_HEADER = os.environ.get("MCP_AUTH_HEADER")
-    # None means use the built-in safe allowlist; "*" explicitly allows all
+    # None means use the built-in reference allowlist; "*" explicitly allows all
     # tools discovered from the MCP server.
     MCP_TOOL_ALLOWLIST = os.environ.get("MCP_TOOL_ALLOWLIST")
     ORCHESTRATOR_TIMEOUT = int(os.environ.get("ORCHESTRATOR_TIMEOUT", "240"))

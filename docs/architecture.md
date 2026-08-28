@@ -10,7 +10,7 @@
 
 ---
 
-> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. This repo defaults to bundled **LangGraph** (`ORCHESTRATOR=langgraph`). `ORCHESTRATOR=flowise` remains as a deprecated compatibility path for one release if you self-host from the [archived Flowise repository](https://github.com/FlowiseAI/Flowise). Do not start new Flowise integrations here.
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) EOL date **31 August 2026**. This repo defaults to bundled **LangGraph** (`ORCHESTRATOR=langgraph`). `ORCHESTRATOR=flowise` remains in v0.2.0 as a deprecated opt-in if you self-host from the [archived Flowise repository](https://github.com/FlowiseAI/Flowise). Do not start new Flowise integrations here.
 
 ## Overview
 <p align="center">
@@ -64,17 +64,21 @@ Because it receives webhooks from external messaging platforms, the bridge servi
 
 ### LangGraph (bundled, default)
 
-When `ORCHESTRATOR=langgraph` (the default), the bridge service compiles a reference ReAct graph at startup, calls the LLM through the **OpenAI Chat Completions** API (`ChatOpenAI` at `LLM_BASE_URL`, typically `POST …/v1/chat/completions`), discovers MCP tools from `MCP_SERVER_URL`, filters them through the built-in safe allowlist (or `MCP_TOOL_ALLOWLIST` when configured), and keeps conversation state in an in-memory checkpointer (`STATE_BACKEND=memory`). The OpenAI Responses API and native Anthropic Messages are not used. Discovery, missing allowlist names, or zero usable tools fail process startup. Pin to a single Cloud Run instance for the reference deploy.
+When `ORCHESTRATOR=langgraph` (the default), the bridge service compiles a reference ReAct graph at startup, calls the LLM through the **OpenAI Chat Completions** API (`ChatOpenAI` at `LLM_BASE_URL`, typically `POST …/v1/chat/completions`), discovers MCP tools from `MCP_SERVER_URL`, filters them through the built-in **reference allowlist** (or `MCP_TOOL_ALLOWLIST` when configured), and keeps conversation state in an in-memory checkpointer (`STATE_BACKEND=memory`). The reference allowlist includes mock read tools and `request_my_time_off` — it is not a security boundary. The OpenAI Responses API and native Anthropic Messages are not used. Discovery, missing allowlist names, or zero usable tools fail process startup. Pin to a single Cloud Run instance for the reference deploy.
+
+### Direct LLM (`ORCHESTRATOR=direct_llm`)
+
+Optional smoke-test path: the bridge calls the Chat Completions API directly with no MCP tools. Use it to verify webhooks and LLM connectivity before wiring MCP. Does not discover tools or enforce an allowlist.
 
 ### Flowise (`flowise/`, deprecated)
 
-When `ORCHESTRATOR=flowise`, the bridge service forwards messages to a customer-hosted Flowise prediction API. Flowise reached EOL on 31 August 2026; this path is retained for one release only. Fork the [archived Flowise repository](https://github.com/FlowiseAI/Flowise) if you must continue self-hosting.
+When `ORCHESTRATOR=flowise`, the bridge service forwards messages to a customer-hosted Flowise prediction API. Flowise EOL date: 31 August 2026; this path is retained for one release only. Fork the [archived Flowise repository](https://github.com/FlowiseAI/Flowise) if you must continue self-hosting.
 
 ### MCP Server (`mcp-demo-server/`)
 
 This project includes a demo MCP server with **mock** Workday tools and sample data for development and testing. Deploy it to a cloud environment so the bridge service can reach it at `MCP_SERVER_URL` (include the `/mcp` path).
 
-The demo server has **no authentication** and is not suitable for production use. In production, replace it with **Workday's official MCP endpoints** via Agent Gateway, which provides enterprise-grade security (OAuth 2.1, mTLS, audit logging, network policies). Set `MCP_SERVER_URL` on the bridge to that URL.
+The demo server has **no authentication** and is not suitable for production use. In production, replace it with **Workday's official MCP endpoints** via Agent Gateway, which provides enterprise-grade security (OAuth 2.1, mTLS, audit logging, network policies). Moving to production is not URL-only — plan for tool discovery, auth, identity mapping, and allowlist updates. Set `MCP_SERVER_URL` on the bridge to the production endpoint.
 
 **Runtime:** Python / FastMCP / Cloud Run (demo) or Workday Agent Gateway (prod)
 
@@ -113,7 +117,7 @@ The demo server has **no authentication** and is not suitable for production use
 
 ### Data Sovereignty
 
-The customer's LLM runs in their own environment. Messages are processed through their infrastructure. Where the bridge holds conversation state (LangGraph + in-memory checkpointer), that state is subject to the same residency and retention controls as the rest of the customer's deployment.
+The customer's LLM runs in their own environment when they self-host the bridge and point `LLM_BASE_URL` at a provider in their control. **Default unset `LLM_BASE_URL` / `LLM_MODEL` send traffic to OpenRouter** (`openrouter/free`) — treat that as a demo default, not a residency guarantee. Where the bridge holds conversation state (LangGraph + in-memory checkpointer), that state is subject to the same residency and retention controls as the rest of the customer's deployment.
 
 ### Platform Agnostic
 
@@ -121,4 +125,4 @@ The bridge service pattern is repeatable for any messaging platform. Orchestrato
 
 ### Production Hardening
 
-This reference architecture implements baseline security (webhook signature verification, input limits, response validation). For production deployments, see the [Enterprise Hardening Guide](enterprise-guide.md) for additional recommendations on rate limiting, PII handling, retry logic, identity mapping, observability, and infrastructure choices (official Workday MCP servers).
+This reference architecture implements baseline security (webhook signature verification where configured, input limits, response validation). **Channel security varies:** LINE WORKS verifies signatures when `LW_API_20_BOT_SECRET` is set; DingTalk in this repo filters by `DINGTALK_ALLOWED_USERS` only (no inbound signature verification); Feishu verifies the event token. For production deployments, see the [Enterprise Hardening Guide](enterprise-guide.md) for additional recommendations on rate limiting, PII handling, retry logic, identity mapping, observability, and infrastructure choices (official Workday MCP servers).

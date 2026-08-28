@@ -10,6 +10,8 @@
 
 ---
 
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+
 기업용 메시징 앱(LINE WORKS, WeChat(위챗), Feishu(페이슈) 등)을 AI 기반 오케스트레이션으로 Workday에 연결하는 참조 아키텍처입니다. 직원이 매일 사용하는 앱 안에서 AI를 이용할 수 있어야 하는 시장을 위해 설계되었습니다.
 
 
@@ -67,7 +69,7 @@ APJ를 염두에 두고 만들었지만, 자체 LLM이나 채팅 플랫폼을 �
 ### 1. 저장소 클론
 
 ```bash
-git clone https://github.com/your-org/ai-conversation-bridge.git
+git clone https://github.com/Workday/ai-conversation-bridge.git
 cd ai-conversation-bridge
 ```
 

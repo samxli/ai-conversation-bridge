@@ -10,6 +10,8 @@
 
 ---
 
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+
 一套参考架构，借助由 AI 驱动的编排能力，将 LINE WORKS、WeChat（微信）、Feishu（飞书）等企业消息应用连接到 Workday。它专为这样的市场而设计：让用户在他们日常使用的应用中就能用上 AI。
 
 
@@ -67,7 +69,7 @@ https://github.com/user-attachments/assets/9b1ea495-5f23-4ae6-b735-18874acdd327
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/your-org/ai-conversation-bridge.git
+git clone https://github.com/Workday/ai-conversation-bridge.git
 cd ai-conversation-bridge
 ```
 

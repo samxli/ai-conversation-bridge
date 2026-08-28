@@ -10,7 +10,7 @@
 
 ---
 
-> **Deprecated:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. These templates remain for `ORCHESTRATOR=flowise` compatibility only. New work should use bundled LangGraph in `bridge-service/`. To continue with Flowise itself, fork the [archived repository](https://github.com/FlowiseAI/Flowise).
+> **Deprecated:** [Flowise](https://flowiseai.com/sunset) EOL date **31 August 2026**. These templates remain for `ORCHESTRATOR=flowise` compatibility only. New work should use bundled LangGraph in `bridge-service/`. To continue with Flowise itself, fork the [archived repository](https://github.com/FlowiseAI/Flowise).
 
 This folder contains exportable Flowise flow templates retained for the deprecated `ORCHESTRATOR=flowise` path.
 

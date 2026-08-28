@@ -10,223 +10,186 @@
 
 ---
 
-> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. This guide defaults to **LangGraph**. See [Deprecated Flowise path](#deprecated-flowise-path) only if you still self-host from the [archived repository](https://github.com/FlowiseAI/Flowise).
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) EOL date **31 August 2026**. This guide defaults to **LangGraph**. See [Deprecated Flowise path](#deprecated-flowise-path) only if you still self-host from the [archived repository](https://github.com/FlowiseAI/Flowise).
 
-This guide walks through setting up each component of the AI Conversation Bridge.
+This guide walks through installing, configuring, and verifying the AI Conversation Bridge. Examples use Google Cloud Run; any platform that gives you a public HTTPS webhook URL works.
 
-> **Important:** All components must be deployed to **public-facing cloud environments** so they can communicate with each other and receive webhooks from external platforms. This guide uses Google Cloud Run as the example, but any container platform with a public HTTPS endpoint works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).
+## Before you begin
 
-## Prerequisites
+- `git`, `gcloud`, and Docker (for local smoke tests)
+- A GCP project with billing enabled and APIs: Cloud Run, Cloud Build, Artifact Registry
+- An OpenRouter API key for the default path, or OpenAI credentials with `LLM_BASE_URL` and `LLM_MODEL` overrides
+- Credentials for at least one supported chat platform: LINE WORKS, DingTalk, or Feishu
 
-- A container hosting platform with public URLs (e.g., [Google Cloud Run](https://cloud.google.com/run))
-- OpenAI Chat Completions credentials (`LLM_API_KEY`; optional `LLM_BASE_URL` for OpenRouter or compatible proxies)
-- LINE WORKS Developer Console access and/or DingTalk Developer Console access (for bot credentials)
+**Network boundaries:** only the bridge webhook must be publicly reachable. The MCP server only needs to be reachable from the bridge. Keep MCP and LLM endpoints private or authenticated when possible.
 
-## 1. Demo MCP Server
+## Choose a path
 
-The demo MCP server provides mock Workday tools for development and testing. Deploy it to a cloud environment (e.g., Google Cloud Run) so the bridge service can reach it at `MCP_SERVER_URL`.
-
-> **Production note:** The demo MCP server is for development only and has no authentication. In production, set `MCP_SERVER_URL` on the bridge to **Workday's official MCP endpoints** via Agent Gateway (OAuth 2.1, mTLS, and other enterprise controls). See the [Production Security](../mcp-demo-server/README.md#production-security) section for details.
-
-### Deploy to Cloud Run
-
-```bash
-gcloud run deploy mcp-demo-server \
-  --source mcp-demo-server
-```
-
-After deployment, Cloud Run provides a public URL (e.g., `https://mcp-demo-server-abc123.us-west1.run.app`). Set `MCP_SERVER_URL` to that URL **with the `/mcp` path**.
-
-### Verify
-
-The MCP server exposes tools via streamable HTTP transport at the `/mcp` path. You can connect to it from any MCP client (Flowise, Claude Desktop, etc.) at your deployed URL (e.g., `https://mcp-demo-server-abc123.us-west1.run.app/mcp`).
-
-## 2. Conversation Bridge Service
-
-The bridge service receives webhooks from messaging platforms, so it **must be deployed to a public-facing environment** with an HTTPS URL. This guide uses Google Cloud Run as the example. If you use a different provider (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.), adapt the deployment commands accordingly.
-
-### Choose an orchestrator
-
-| `ORCHESTRATOR` | When to use it | Required settings |
+| Path | Orchestrator | MCP required? |
 | --- | --- | --- |
-| `langgraph` (default) | Bundled code-first agent; MCP called from the bridge; LLM via OpenAI Chat Completions | `LLM_API_KEY`, `MCP_SERVER_URL` |
-| `direct_llm` | Demo chat without tools; same Chat Completions API | `LLM_API_KEY` |
-| `flowise` (deprecated) | Legacy self-hosted Flowise only; EOL 31 Aug 2026 | `FLOWISE_API_URL` |
+| **Default demo** | `langgraph` | Yes |
+| **Webhook smoke test** | `direct_llm` | No |
+| **Legacy compatibility** | `flowise` (deprecated) | Via Flowise, not bridge |
 
-Set `ORCHESTRATOR` explicitly when migrating from 0.1.0. Legacy `AI_PROVIDER` / `CHAT_PROVIDER` still map when `ORCHESTRATOR` is unset.
+Set `ORCHESTRATOR` explicitly when migrating from v0.1.0. Legacy `AI_PROVIDER` / `CHAT_PROVIDER` still map when `ORCHESTRATOR` is unset.
 
-### Configuration
+Variable reference: [bridge-service/.env.example](../bridge-service/.env.example).
 
-Prepare your environment variables. You can use `bridge-service/.env.example` as a reference:
-
-```bash
-# LangGraph path (default)
-ORCHESTRATOR=langgraph
-LLM_API_KEY=your-openrouter-or-compatible-key
-LLM_MODEL=openrouter/free
-LLM_BASE_URL=https://openrouter.ai/api/v1   # Chat Completions root (…/v1)
-LLM_MESSAGE_WINDOW=20
-MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp
-STATE_BACKEND=memory
-
-# Deprecated Flowise path:
-# ORCHESTRATOR=flowise
-# FLOWISE_API_URL=https://your-flowise.com/api/v1/prediction/<flow-id>
-# FLOWISE_API_KEY=your-flowise-api-key
-
-# LINE WORKS bot credentials
-LW_API_20_CLIENT_ID=your-client-id
-LW_API_20_CLIENT_SECRET=your-client-secret
-LW_API_20_SERVICE_ACCOUNT_ID=your-service-account-id
-LW_API_20_PRIVATEKEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
-LW_API_20_BOT_ID=your-bot-id
-LW_API_20_BOT_SECRET=your-bot-secret
-
-# DingTalk HTTP robot settings
-# Use admin-console employee UserID values for DINGTALK_ALLOWED_USERS.
-DINGTALK_ALLOWED_USERS=ding-user-id-1,ding-user-id-2
-DINGTALK_ALLOW_ALL_USERS=false
-DINGTALK_REQUIRE_MENTION=true
-DINGTALK_GROUP_SESSIONS_PER_USER=true
-```
-
-For LangGraph, leave `MCP_TOOL_ALLOWLIST` unset to use the built-in safe
-allowlist. Set it to a comma-separated list to select specific discovered
-tools, or set it to `*` only when intentionally allowing every tool exposed by
-the MCP server. Quote `*` when setting it from a shell. An empty value is
-invalid and fails startup. Any allowlisted name the MCP server does not expose
-also fails startup, as does an unreachable MCP server or a server that returns
-no usable tools. Deploy the MCP server first; LangGraph will not boot a healthy
-container without a working tool set.
-
-Leave `LLM_SYSTEM_PROMPT` unset on LangGraph to keep the bundled Workday
-prompt; current date and time are always appended. `LLM_MESSAGE_WINDOW`
-defaults to 20 (last N messages). `LLM_REASONING_EFFORT` is optional and
-OpenRouter-shaped; some models ignore it. `LLM_MESSAGE_WINDOW` must be `> 0`
-or LangGraph startup fails.
-
-LangGraph and Direct LLM call the **OpenAI Chat Completions** API
-(`POST {LLM_BASE_URL}/chat/completions`). Set `LLM_BASE_URL` to an OpenAI-compatible
-root such as `https://openrouter.ai/api/v1` or `https://api.openai.com/v1`. The
-OpenAI Responses API and native Anthropic Messages API are not supported; Anthropic
-models work only through a Chat Completions proxy (for example OpenRouter).
-
-> **Security:** `LW_API_20_BOT_SECRET` enables webhook signature verification — the connector rejects any callback whose `X-WORKS-Signature` header doesn't match. You can find your Bot Secret in the LINE WORKS Developer Console under your bot's details. If omitted, signature verification is skipped with a warning (acceptable for local development, **not for production**).
->
-> **Note on private keys:** When setting `LW_API_20_PRIVATEKEY` in your container platform, newline handling varies. You can paste the key directly (the connector normalizes the format automatically), use literal `\n` characters, or store the key in a secrets manager (recommended). See [Private Key Formatting](#private-key-formatting) below.
->
-> **Compatibility:** `AI_PROVIDER` / `CHAT_PROVIDER` remain deprecated aliases when `ORCHESTRATOR` is unset.
-
-### Deploy to Cloud Run
+## Local smoke test (optional)
 
 ```bash
-LLM_API_KEY=your-key \
-MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp \
-  ./scripts/deploy-cloud-run.sh
+./scripts/setup.sh
+# Edit bridge-service/.env:
+#   ORCHESTRATOR=langgraph
+#   LLM_API_KEY=...
+#   MCP_SERVER_URL=http://mcp-demo-server:8080/mcp
+
+docker compose up --build
+curl -sS http://localhost:8080/
 ```
 
-Or pass env vars on the **first** revision (required — startup validation fails without `LLM_API_KEY` and `MCP_SERVER_URL`):
+Compose is for build/log inspection. Chat webhooks still need a public URL in real use.
+
+## Cloud Run: LangGraph (default)
+
+### 1. Deploy both services
 
 ```bash
-gcloud run deploy bridge-service \
-  --source bridge-service \
-  --min-instances=1 --max-instances=1 --concurrency=8 \
-  --set-env-vars "ORCHESTRATOR=langgraph,LLM_API_KEY=your-key,MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp"
+export REGION=us-west1
+export LLM_API_KEY=your-openrouter-key
+# Optional if MCP is already deployed:
+# export MCP_SERVER_URL=https://mcp-demo-server-....run.app/mcp
+
+./scripts/deploy-cloud-run.sh "$REGION"
 ```
 
-LangGraph has been exercised on Cloud Run at **256Mi**; the deploy script does not pin memory. Also set channel connector credentials (see `bridge-service/.env.example`).
+The script deploys `mcp-demo-server`, derives `MCP_SERVER_URL` when omitted, then deploys `bridge-service` with LangGraph env on the **first** revision.
 
-After deployment, Cloud Run provides a public URL (e.g., `https://bridge-service-abc123.us-west1.run.app`). You'll use this as your webhook URL.
+**Defaults note:** unset `LLM_BASE_URL` / `LLM_MODEL` send requests to OpenRouter (`openrouter/free`). For OpenAI, set all three: key, `https://api.openai.com/v1`, and your model name.
 
-For sensitive values like `LW_API_20_PRIVATEKEY`, consider using [Google Secret Manager](https://cloud.google.com/run/docs/configuring/secrets) instead of plain environment variables:
+### 2. Add channel credentials
+
+Use `--update-env-vars` or `--update-secrets`. Do **not** rerun deploy with bare `--set-env-vars` on an existing service — that replaces every env var and can remove `LLM_API_KEY` / `MCP_SERVER_URL`.
 
 ```bash
-gcloud run deploy bridge-service \
-  --source bridge-service \
-  --set-env-vars "ORCHESTRATOR=langgraph,LLM_API_KEY=...,MCP_SERVER_URL=..." \
-  --set-secrets "LW_API_20_PRIVATEKEY=lw-private-key:latest"
+gcloud run services update bridge-service \
+  --region "$REGION" \
+  --update-env-vars "DINGTALK_ALLOWED_USERS=your-staff-id,FEISHU_VERIFICATION_TOKEN=...,FEISHU_APP_ID=...,FEISHU_APP_SECRET=..."
 ```
 
-### LINE WORKS Bot Setup
+For `LW_API_20_PRIVATEKEY`, prefer Secret Manager:
 
-1. Go to the [LINE WORKS Developer Console](https://developers.worksmobile.com/)
-2. Create a Bot
-3. Set the callback URL to your deployed bridge service's public URL + `/lineworks/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/lineworks/callback`)
-4. Set the environment variables on your container platform with the bot credentials
+```bash
+gcloud run services update bridge-service \
+  --region "$REGION" \
+  --update-secrets "LW_API_20_PRIVATEKEY=lw-private-key:latest"
+```
 
-`/callback` is still supported as a backwards-compatible LINE WORKS alias, but new deployments should use `/lineworks/callback`.
+### 3. Verify
 
-### DingTalk HTTP Robot Setup
+**MCP initialize** (replace URL):
 
-1. **Create Enterprise App & Robot Capability:**
-   - Go to the [DingTalk Developer Console](https://open-dev.dingtalk.com/).
-   - Navigate to **Application Development (应用开发)** → **Enterprise Internal Development (企业内部开发)** → **Create Application (创建应用)**.
-   - In application details, go to **Add Capability (添加应用能力)** and add **Robot (机器人)**.
+```bash
+curl -sS -X POST "https://<mcp-service-url>/mcp" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+```
 
-2. **Configure HTTP Receiving Mode:**
-   - In robot configuration, set message receiving mode to **HTTP Mode** (not Stream Mode).
-   - Set callback URL to your deployed bridge service public URL + `/dingtalk/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`).
-   - Save configuration.
+Expect a JSON-RPC `result` with `serverInfo`.
 
-3. **Publish App Version:**
-   - Go to **Version Management & Release (版本管理与发布)** → **Create Version (创建新版本)** and publish. (Unpublished apps omit employee UserIDs in webhook events.)
+**Bridge health:**
 
-4. **Interact with the Robot:**
-   - **Direct Message (1-on-1):** Click the robot's profile/name (or search for it in DingTalk) and click the send message / DM button.
-   - **Group Chat:** In DingTalk client, create a new internal group chat (or open an existing internal group), then go to **群设置 (Group Settings)** → **群管理 (Group Management)** → **机器人 (Robots)** → **添加机器人 (Add Robot)**, and select your published enterprise robot.
+```bash
+curl -sS "https://<bridge-service-url>/"
+```
 
-5. **Configure Access Control (`.env`):**
-   - For open access / demos: Set `DINGTALK_ALLOW_ALL_USERS=true`.
-   - For restricted access: Set `DINGTALK_ALLOWED_USERS` to comma-separated employee UserIDs (found in [DingTalk Admin Console](https://admin.dingtalk.com/) → **Contacts (通讯录)** → **Member Management (成员管理)** → user profile).
+Expect `{"status":"ok","orchestrator":"langgraph",...}`.
 
-By default, direct messages receive responses from allowed users. Group messages require @mention (`DINGTALK_REQUIRE_MENTION=true`), and group sessions are isolated per user (`DINGTALK_GROUP_SESSIONS_PER_USER=true`).
+**Startup logs:**
 
-#### Troubleshooting
+```bash
+gcloud run services logs read bridge-service --region "$REGION" --limit 50 \
+  | grep -E "LangGraph|MCP tools|startup failed"
+```
 
-- **Bot ignores messages:** Confirm app version is published in Developer Console and robot added to internal group within same organization.
+Expect tool discovery logs and no `startup failed`.
 
-### Feishu (Lark) Bot Setup
+Send one real chat message to confirm delivery.
 
-1. Go to the [Feishu Open Platform](https://open.feishu.cn/app) and create an enterprise app.
-2. Enable **Event Subscription** and subscribe to `im.message.receive_v1`.
-3. Set the request URL to your deployed bridge service's public URL + `/feishu/callback` (e.g., `https://bridge-service-abc123.us-west1.run.app/feishu/callback`).
-4. Copy the **Verification Token** into `FEISHU_VERIFICATION_TOKEN`, and set `FEISHU_APP_ID` / `FEISHU_APP_SECRET` from the app credentials page.
-5. Leave **Encrypt Key** disabled unless you add payload decryption support — encrypted callbacks return HTTP 400 with a clear error.
+### 4. Connect a chat platform
 
-Feishu retries the webhook if it does not receive HTTP 200 within **3 seconds** (then again at 15s / 5min / 1h / 6h). Orchestrator calls usually exceed 3s, so the bridge claims `message_id` before the AI call and ignores later deliveries of the same message. Dedup is in-process only (same limit as LangGraph `STATE_BACKEND=memory`: one Cloud Run instance).
+- LINE WORKS: `<bridge-url>/lineworks/callback` (legacy `/callback` still works)
+- DingTalk: `<bridge-url>/dingtalk/callback`
+- Feishu: `<bridge-url>/feishu/callback`
 
-### Quick Test with Direct LLM
+### LangGraph configuration notes
 
-If you want to test the bridge without Flowise or LangGraph tools:
+- Leave `MCP_TOOL_ALLOWLIST` unset to use the built-in **reference allowlist** (includes mock read tools and `request_my_time_off`). It is not a security boundary.
+- `LLM_MESSAGE_WINDOW` limits model input for each turn; the in-memory checkpointer can still retain full thread history.
+- LangGraph fails startup if MCP is unreachable, an allowlisted tool name is missing, or zero tools remain.
+- With `STATE_BACKEND=memory`, use `--max-instances=1` so conversation state does not fragment across replicas. `--min-instances=1` is optional (reduces cold starts, adds cost) and does not make memory durable across restarts.
+
+## Direct LLM smoke test
+
+Use this to verify webhooks before adding MCP:
 
 ```bash
 ORCHESTRATOR=direct_llm
-LLM_API_KEY=your-openrouter-key
+LLM_API_KEY=your-key
 LLM_MODEL=openrouter/free
+LLM_BASE_URL=https://openrouter.ai/api/v1
 ```
 
-This connects configured chat channels directly to an OpenAI Chat Completions
-endpoint (`POST {LLM_BASE_URL}/chat/completions`) — useful for verifying webhook
-flows before adding orchestration.
+No `MCP_SERVER_URL` required.
 
-### Private Key Formatting
+## Channel setup
 
-Container platforms handle multi-line environment variables differently. The bridge service automatically normalizes the PEM private key, so all of these approaches work:
+### LINE WORKS
 
-- **Paste directly** in the Cloud Run console or equivalent — newlines may become spaces, but the connector handles this
-- **Use literal `\n`** when setting via CLI — e.g., `-----BEGIN PRIVATE KEY-----\nMIIEvQI...\n-----END PRIVATE KEY-----`
-- **Use a secrets manager** (recommended) — stores the key with exact formatting preserved
+1. Create a bot in the [LINE WORKS Developer Console](https://developers.worksmobile.com/).
+2. Configure OAuth / service account credentials and map them to `LW_API_20_*` in `.env.example`.
+3. Set `LW_API_20_BOT_SECRET` in production — without it, signature verification is skipped with a warning.
+4. Set callback URL to `<bridge-url>/lineworks/callback`.
 
-### Scaling and execution model
+**Private keys:** paste directly, use literal `\n`, or store in Secret Manager. The bridge normalizes PEM formatting.
 
-The bridge service runs Gunicorn with **one worker and eight threads** (`--workers 1 --threads 8 --timeout 300`). Work is I/O-bound; threads share in-memory conversation state used by `ORCHESTRATOR=langgraph` with `STATE_BACKEND=memory`. Multiple workers (or multiple Cloud Run instances) would fragment that state.
+### DingTalk
 
-Webhook retry dedup (`message_id` / `msgId` / LINE WORKS body hash) is the same in-process map. Extra instances can still double-process a retry. Stay on a single instance until that store is shared.
+Follow the HTTP robot setup in the developer console. Publish the app version so `senderStaffId` is included in webhooks.
 
-The reference `scripts/deploy-cloud-run.sh` therefore pins Cloud Run to `--min-instances=1 --max-instances=1 --concurrency=8`. Keep `ORCHESTRATOR_TIMEOUT` (default 240) below the Gunicorn timeout so typed failures return before the worker is killed.
+`DINGTALK_ALLOWED_USERS` is a **sender filter**, not cryptographic authentication. The demo path has no inbound signature verification. Treat a public bridge URL as demo-only unless you add ingress controls.
 
-For LangGraph with `STATE_BACKEND=memory`, stay on a single instance until a durable checkpointer is added.
+### Feishu (Lark)
+
+1. Create an app and enable bot + `im.message.receive_v1` event subscription.
+2. Copy `FEISHU_VERIFICATION_TOKEN`, `FEISHU_APP_ID`, and `FEISHU_APP_SECRET` into the bridge **before** saving the callback URL.
+3. Set callback URL to `<bridge-url>/feishu/callback`.
+4. Leave Encrypt Key disabled unless you add decryption support.
+
+Feishu retries quickly; the bridge deduplicates by `message_id` in-process.
+
+## Production MCP migration
+
+Moving from the demo server is not URL-only. Plan for:
+
+1. Tool discovery on the target endpoint
+2. Updating `MCP_TOOL_ALLOWLIST` and prompts for real tool names/schemas
+3. Supported authentication (static header today; OAuth/mTLS may need more integration)
+4. Per-chat-user Workday identity — demo uses one global `CURRENT_USER_WORKER_ID`
+5. Disabling or gating write tools until authorization is verified
+
+See [mcp-demo-server/README.md](../mcp-demo-server/README.md#production) and [Enterprise Hardening Guide](enterprise-guide.md).
+
+## Cleanup
+
+```bash
+gcloud run services delete bridge-service --region "$REGION"
+gcloud run services delete mcp-demo-server --region "$REGION"
+```
+
+`--min-instances=1` incurs idle cost. Remove it for experiments.
 
 ## Deprecated Flowise path
 
-Flowise reached EOL on 31 August 2026 ([announcement](https://flowiseai.com/sunset)). Fork the [archived repository](https://github.com/FlowiseAI/Flowise) if you must continue self-hosting. Set `ORCHESTRATOR=flowise` and `FLOWISE_API_URL` on the bridge. See [flowise/README.md](../flowise/README.md) for the legacy flow import steps.
+Flowise EOL date: 31 August 2026 ([announcement](https://flowiseai.com/sunset)). Fork the [archived repository](https://github.com/FlowiseAI/Flowise) if you must continue self-hosting. Set `ORCHESTRATOR=flowise` and `FLOWISE_API_URL` on the bridge. See [flowise/README.md](../flowise/README.md).

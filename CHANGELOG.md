@@ -13,7 +13,7 @@ promise API or deploy-surface stability.
 
 ### Breaking
 
-- Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (re-point LINE WORKS and DingTalk callback URLs).
+- Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (create the new service and re-point callbacks; Cloud Run does not support renaming an existing service).
 - **Default orchestrator is now `langgraph`** when `ORCHESTRATOR` and legacy `AI_PROVIDER` / `CHAT_PROVIDER` are unset (was implicit Flowise).
 - Prefer `ORCHESTRATOR` over `AI_PROVIDER` / `CHAT_PROVIDER` (deprecated aliases still work for one release).
 - LangGraph with `STATE_BACKEND=memory` requires a single Cloud Run instance (`--min-instances=1 --max-instances=1`); conversation state is not shared across replicas.

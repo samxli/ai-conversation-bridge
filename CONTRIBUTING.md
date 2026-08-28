@@ -10,7 +10,7 @@
 
 ---
 
-This project is a **reference architecture** — most teams will fork and customize it for their own deployments. If you'd like to contribute improvements back upstream (bug fixes, new chat platform adapters, documentation, new demo MCP tools, new Flowise flow templates), this guide explains how.
+This project is a **reference architecture** — most teams will fork and customize it for their own deployments. If you'd like to contribute improvements back upstream (bug fixes, new chat platform adapters, documentation, new demo MCP tools), this guide explains how.
 
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
@@ -22,7 +22,8 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 | Documentation improvements | Open a PR |
 | New chat platform adapters (e.g., WeChat, KakaoTalk) | Open a PR |
 | New demo MCP tools (with mock data) | Open a PR |
-| New Flowise flow templates | Open a PR |
+| LangGraph orchestrator improvements | Open a PR |
+| Deprecated Flowise flow templates (compatibility only) | Open a PR |
 | Translations (see [i18n/GLOSSARY.md](i18n/GLOSSARY.md)) | Open a PR |
 | Architectural or framework changes | Open an issue first to discuss |
 
@@ -32,7 +33,7 @@ This project is licensed under the [Apache License 2.0](LICENSE). By submitting 
 
 ## Development Setup
 
-All components are designed for **cloud deployment** — chat platform webhooks and Flowise require public HTTPS endpoints. See the [Setup Guide](docs/setup-guide.md) for full deployment instructions.
+All components are designed for **cloud deployment** — chat platform webhooks require public HTTPS endpoints. See the [Setup Guide](docs/setup-guide.md) for full deployment instructions.
 
 For local builds and verification:
 
@@ -42,7 +43,7 @@ docker compose build         # verify Dockerfiles
 docker compose up --build    # run locally for log inspection / MCP testing
 ```
 
-> **Tip:** To test the bridge service without Flowise, set `ORCHESTRATOR=direct_llm` and provide an `LLM_API_KEY` (legacy `AI_PROVIDER=openrouter` / `OPENROUTER_API_KEY` still work as aliases). This posts to the OpenAI Chat Completions API (`{LLM_BASE_URL}/chat/completions`) with no MCP tools.
+> **Tip:** To test the bridge service without MCP tools, set `ORCHESTRATOR=direct_llm` and provide an `LLM_API_KEY` (legacy `AI_PROVIDER=openrouter` / `OPENROUTER_API_KEY` still work as aliases). This posts to the OpenAI Chat Completions API (`{LLM_BASE_URL}/chat/completions`) with no MCP tools.
 
 ## Making Changes
 
@@ -50,7 +51,9 @@ Follow existing patterns in each component. The key conventions:
 
 - **bridge service** (`bridge-service/app/`) — Config in `config.py`, routes in `routes.py`, one service file per platform/provider in `services/`. New chat platform adapters should use platform-scoped routes such as `/lineworks/callback` or `/dingtalk/callback`, then call the shared AI pipeline with a platform-scoped session id. Update `.env.example` with any new required variables.
 
-- **Flowise flows** (`flowise/flows/`) — Export flows as JSON from Flowise. Include screenshots in `flowise/screenshots/` and document the flow's purpose and required configuration in `flowise/README.md`. Ensure new flows work with the demo MCP server.
+- **LangGraph orchestrator** (`bridge-service/app/orchestration/langgraph/`) — Default path; MCP tool discovery and allowlist live here.
+
+- **Deprecated Flowise flows** (`flowise/flows/`) — Compatibility only; Flowise EOL 31 Aug 2026.
 
 - **MCP server** (`mcp-demo-server/`) — New tools go in `main.py` with type hints and docstrings. Add corresponding mock data as JSON in `mock_data/`.
 

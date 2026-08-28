@@ -10,7 +10,7 @@
 
 ---
 
-> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) reached end of life on **31 August 2026**. This repo now defaults to bundled **LangGraph** (`ORCHESTRATOR=langgraph`). `ORCHESTRATOR=flowise` remains as a deprecated compatibility path for one release if you self-host from the [archived Flowise repository](https://github.com/FlowiseAI/Flowise). Do not start new Flowise integrations here.
+> **Flowise sunset:** [Flowise](https://flowiseai.com/sunset) EOL date **31 August 2026**. This repo defaults to bundled **LangGraph** (`ORCHESTRATOR=langgraph`). `ORCHESTRATOR=flowise` remains in v0.2.0 as a deprecated opt-in if you self-host from the [archived Flowise repository](https://github.com/FlowiseAI/Flowise). Do not start new Flowise integrations here.
 
 A reference architecture that connects enterprise messaging apps (LINE WORKS, WeChat, Feishu, etc.) to Workday using AI-powered orchestration. It's built for markets where you need to meet workers in the apps they already use every day.
 
@@ -44,140 +44,108 @@ While we built this with APJ in mind, the pattern works anywhere you want to use
 Chat platforms  ←→  bridge service (LangGraph)  ←→  MCP server  ←→  Workday
 ```
 
-The project has three deployable pieces. **The bridge service is the brain** — channel adapters plus in-process LangGraph (LLM + MCP tool calls). The MCP server executes Workday actions (mock data in the demo).
+**Included chat adapters:** LINE WORKS, DingTalk, and Feishu. WeChat and KakaoTalk are common APJ examples but are not shipped in this repo yet.
 
-*(For more details on boundaries and intended usage, check out [docs/architecture.md](docs/architecture.md).)*
+The bridge service runs channel webhooks and in-process LangGraph in one process. The demo MCP server returns mock Workday data. For production, plan a full MCP integration — not just a URL change. See [docs/setup-guide.md](docs/setup-guide.md) and [docs/architecture.md](docs/architecture.md).
 
-
-| Component           | What it does                                                                                   | Where it lives                         |
-| ------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **bridge service**  | Channel adapters + in-process LangGraph (`ORCHESTRATOR=langgraph`); receives messages and sends replies. | [bridge-service/](bridge-service/)   |
-| **Demo MCP Server** | Mock Workday tools for testing and development. (Swap for Workday Agent Gateway in production). | [mcp-demo-server/](mcp-demo-server/) |
-| **Flowise Flows**   | Deprecated visual orchestration (`ORCHESTRATOR=flowise`); Flowise EOL 31 Aug 2026.             | [flowise/](flowise/)                 |
-
+| Component | What it does | Where it lives |
+| --- | --- | --- |
+| **bridge service** | Webhooks + in-process LangGraph (`ORCHESTRATOR=langgraph`) | [bridge-service/](bridge-service/) |
+| **demo MCP server** | Mock Workday tools for development | [mcp-demo-server/](mcp-demo-server/) |
+| **Flowise flows** | Deprecated templates (`ORCHESTRATOR=flowise`); Flowise EOL 31 Aug 2026 | [flowise/](flowise/) |
 
 ## Quick Start
 
-### What you'll need
+Pick one path:
 
-- A container hosting platform with public HTTPS endpoints (like [Google Cloud Run](https://cloud.google.com/run))
-- LINE WORKS Bot credentials and/or DingTalk robot access (for the bridge service)
-- **LangGraph (default):** OpenAI Chat Completions API key (`LLM_BASE_URL` + `LLM_API_KEY`) and a reachable MCP server URL (include `/mcp`)
-- **Direct LLM (optional):** same Chat Completions credentials for demos without tools
-- **Flowise (deprecated):** only if you explicitly set `ORCHESTRATOR=flowise` and self-host from the archived repo
+| Path | Use when |
+| --- | --- |
+| **LangGraph on Cloud Run** (default) | You want the full demo with MCP tools |
+| **Local Compose smoke test** | You want to verify containers build locally |
+| **Direct LLM** | You only need to test webhooks without MCP tools |
 
-*Note: Everything needs to be deployed to a public-facing cloud environment. We use Google Cloud Run in these examples, but any container platform works (AWS App Runner, Azure Container Apps, Alibaba Cloud Elastic Container Instance, Tencent Kubernetes Engine, etc.).*
+Full steps, verification commands, and channel setup live in [docs/setup-guide.md](docs/setup-guide.md). Summary for Cloud Run:
 
-### 1. Clone the repo
+### Prerequisites
+
+- `gcloud` installed, authenticated, and pointed at a project with billing enabled
+- An OpenRouter API key (defaults target OpenRouter) or another OpenAI-compatible Chat Completions provider
+- Chat credentials for at least one supported platform
+
+Only the **bridge webhook URL** must be publicly reachable. Keep MCP and LLM endpoints private or authenticated when you can.
+
+### Deploy
 
 ```bash
-git clone https://github.com/your-org/ai-conversation-bridge.git
+git clone https://github.com/Workday/ai-conversation-bridge.git
 cd ai-conversation-bridge
+
+export REGION=us-west1
+export LLM_API_KEY=your-openrouter-key
+# Optional if you already deployed MCP elsewhere:
+# export MCP_SERVER_URL=https://mcp-demo-server-....run.app/mcp
+
+./scripts/deploy-cloud-run.sh "$REGION"
 ```
 
-### 2. Deploy the demo MCP server
+The script deploys `mcp-demo-server`, derives `MCP_SERVER_URL` when omitted, then deploys `bridge-service` with LangGraph env on the first revision.
+
+Add channel credentials with **non-destructive** updates (do not use bare `--set-env-vars` on an existing service — it replaces all env vars):
 
 ```bash
-gcloud run deploy mcp-demo-server \
-  --source mcp-demo-server
+gcloud run services update bridge-service \
+  --region "$REGION" \
+  --update-env-vars "DINGTALK_ALLOWED_USERS=your-staff-id"
 ```
 
-> **Going to production?** Replace the demo server with **Workday's official MCP endpoints** via Agent Gateway. Set `MCP_SERVER_URL` on the bridge to that URL.
+Point your chat platform at `https://<bridge-service-url>/lineworks/callback`, `/dingtalk/callback`, or `/feishu/callback`.
 
-### 3. Deploy the bridge service
+### Verify
 
 ```bash
-LLM_API_KEY=your-key \
-MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp \
-  ./scripts/deploy-cloud-run.sh
+curl -sS "https://<bridge-service-url>/"
+# Expect: {"status":"ok","orchestrator":"langgraph",...}
+
+gcloud run services logs read bridge-service --region "$REGION" --limit 50 \
+  | grep -E "LangGraph|MCP tools|startup failed"
+# Expect tool discovery logs and no startup failure
 ```
 
-Or deploy manually with env vars on the **first** revision (startup validation requires `LLM_API_KEY` and `MCP_SERVER_URL` for the default LangGraph path):
-
-```bash
-gcloud run deploy bridge-service \
-  --source bridge-service \
-  --min-instances=1 --max-instances=1 --concurrency=8 \
-  --set-env-vars "ORCHESTRATOR=langgraph,LLM_API_KEY=your-key,MCP_SERVER_URL=https://mcp-demo-server-abc123.us-west1.run.app/mcp"
-```
-
-LangGraph has been exercised on Cloud Run at **256Mi**; memory is not pinned in the deploy script — raise it only if you OOM. See `bridge-service/.env.example` for channel credentials and optional LangGraph settings (`LLM_MESSAGE_WINDOW`, `MCP_TOOL_ALLOWLIST`, etc.). Deploy the MCP server before the bridge; a down MCP server or missing allowlisted tools fail container startup.
-
-### 4. Connect Chat Channels
-
-Set your chat platform callback URLs to the channel-specific endpoints:
-
-- LINE WORKS: `https://bridge-service-abc123.us-west1.run.app/lineworks/callback`
-- DingTalk HTTP robot: `https://bridge-service-abc123.us-west1.run.app/dingtalk/callback`
-- Feishu (Lark): `https://bridge-service-abc123.us-west1.run.app/feishu/callback`
-
-The legacy `/callback` path is still accepted as a LINE WORKS alias for existing deployments.
+Send one real chat message to confirm end-to-end delivery.
 
 ## Orchestrators
 
-The bridge service supports three orchestrators. Prefer `ORCHESTRATOR`; legacy `AI_PROVIDER` / `CHAT_PROVIDER` remain aliases when unset.
-
-
 | Orchestrator | When to use it | Config |
 | --- | --- | --- |
-| **LangGraph** (default) | Bundled code-first agent; MCP from the bridge | `LLM_API_KEY`, `MCP_SERVER_URL` |
-| **Direct LLM** | Demos without tools (OpenAI Chat Completions) | `ORCHESTRATOR=direct_llm`, `LLM_API_KEY` |
-| **Flowise** (deprecated) | Legacy self-hosted Flowise only; EOL 31 Aug 2026 | `ORCHESTRATOR=flowise`, `FLOWISE_API_URL` |
+| **LangGraph** (default) | Bundled agent with MCP tools | `LLM_API_KEY`, `MCP_SERVER_URL` |
+| **Direct LLM** | Webhook smoke tests without tools | `ORCHESTRATOR=direct_llm`, `LLM_API_KEY` |
+| **Flowise** (deprecated) | Legacy self-hosted Flowise only | `ORCHESTRATOR=flowise`, `FLOWISE_API_URL` |
 
-
-## Demo MCP Tools
-
-The demo MCP server comes with mock Workday tools and data so you can test the whole pipeline. When you're ready for production, just swap it out for Workday's official MCP endpoints.
-
-
-| Tool                                | What it does                                         |
-| ----------------------------------- | ---------------------------------------------------- |
-| `find_employee_id_by_name`          | Look up an employee's worker ID by name              |
-| `get_current_user_info`             | Get the current user's profile                       |
-| `get_current_user_time_off_balance` | Get the current user's leave balances                |
-| `get_current_user_time_off_history` | Get the current user's leave request history         |
-| `get_time_off_balance`              | Get leave balances for any worker by ID              |
-| `get_direct_reports`                | List direct reports for a manager                    |
-| `get_more_employee_data`            | Get extended employee data                           |
-| `get_my_time_off_eligibility`       | Check which leave types the current user can request |
-| `get_personal_information`          | Get personal info (address, emergency contact)       |
-| `get_today_date_and_day_of_week`    | Get the current date and time                        |
-| `request_my_time_off`               | Submit a time-off request for the current user       |
-
-
-*Fun fact: The mock data includes workers across China, Japan, and South Korea with localized names and currencies!*
+See [bridge-service/.env.example](bridge-service/.env.example) for all variables.
 
 ## Project Structure
 
 ```text
 ai-conversation-bridge/
-├── bridge-service/          # Channel adapters + orchestrators (Flask, Python)
-│   ├── app/channels/        # LINE WORKS, DingTalk
-│   ├── app/orchestration/   # Flowise, LangGraph, Direct LLM
-│   ├── Dockerfile
+├── bridge-service/          # Webhooks + LangGraph orchestrator
+│   ├── app/channels/        # LINE WORKS, DingTalk, Feishu
+│   ├── app/orchestration/   # LangGraph, Direct LLM, deprecated Flowise
 │   └── .env.example
-├── flowise/                 # Flow templates (Flowise path)
-│   ├── flows/
-│   └── screenshots/
-├── mcp-demo-server/         # Demo Workday MCP server
-│   ├── mock_data/
-│   ├── Dockerfile
-│   └── .env.example
-├── docs/                    # Architecture, setup, proposals
-├── scripts/                 # Local setup and Cloud Run deploy
-├── docker-compose.yml
-└── .github/
+├── mcp-demo-server/         # Mock Workday MCP tools
+├── flowise/                 # Deprecated Flowise templates
+├── docs/                    # Architecture, setup, enterprise guide
+└── scripts/                 # setup.sh, deploy-cloud-run.sh
 ```
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — Detailed system design and request flow
-- [Setup Guide](docs/setup-guide.md) — Step-by-step setup for each component
-- [Enterprise Hardening Guide](docs/enterprise-guide.md) — Security, reliability, and operational recommendations for production
-- [Release notes v0.2.0](docs/RELEASE_NOTES_v0.2.0.md) — Migration checklist (canonical list in [Changelog](CHANGELOG.md))
-- [Flowise Configuration](flowise/README.md) — Deprecated flow templates (Flowise EOL 31 Aug 2026)
-- [Contributing](CONTRIBUTING.md) — How to contribute to this project
-- [Changelog](CHANGELOG.md) — Tagged releases (`v0.x`; reference architecture, no stability promise)
+- [Setup Guide](docs/setup-guide.md) — Install, configure, verify, and clean up
+- [Architecture](docs/architecture.md) — Boundaries, state, and security model
+- [Enterprise Hardening Guide](docs/enterprise-guide.md) — Production gaps and mitigations
+- [Release notes v0.2.0 (draft)](docs/RELEASE_NOTES_v0.2.0.md) — Migration from v0.1.0
+- [Changelog](CHANGELOG.md) — Release history
+- [Flowise templates (deprecated)](flowise/README.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## License
 
