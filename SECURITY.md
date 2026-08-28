@@ -32,3 +32,5 @@ This project handles sensitive data including:
 - Set `LW_API_20_BOT_SECRET` for LINE WORKS signature verification; treat DingTalk's `DINGTALK_ALLOWED_USERS` filter as demo-only without additional ingress controls
 
 For detailed technical hardening recommendations (rate limiting, PII redaction, retry logic, prompt injection defenses, observability, and more), see the [Enterprise Hardening Guide](docs/enterprise-guide.md).
+
+For v0.2.0 channel-auth and in-memory state limits, see [Release notes — Known limitations](docs/RELEASE_NOTES_v0.2.0.md#known-limitations-v020).

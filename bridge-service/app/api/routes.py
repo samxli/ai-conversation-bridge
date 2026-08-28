@@ -50,7 +50,7 @@ def get_ai_response(user_text: str, session_id: str) -> str:
         )
     except TimeoutError:
         logger.error("Orchestration timed out after %.0fs", timeout + 30.0)
-        return user_message_for(FailureCode.TIMEOUT)
+        raise
     if result.failure is not None:
         logger.error(
             "Orchestration failure code=%s detail=%s",
@@ -145,6 +145,14 @@ def lineworks_callback():
 
             lw_client.send_message(message.reply_target, reply_content)
             current_app.logger.info(f"Sent reply to user {message.sender_id}")
+        except TimeoutError:
+            release_delivery(delivery_key)
+            lw_client.send_message(message.reply_target, {
+                "content": {
+                    "type": "text",
+                    "text": user_message_for(FailureCode.TIMEOUT),
+                }
+            })
         except Exception:
             release_delivery(delivery_key)
             raise
@@ -193,6 +201,11 @@ def dingtalk_callback():
             ai_response_text = get_ai_response(message.text, session_id=message.session_id)
             dingtalk_client.send_text(message.reply_target, ai_response_text)
             current_app.logger.info(f"Sent DingTalk reply to user {message.sender_id}")
+        except TimeoutError:
+            release_delivery(delivery_key)
+            dingtalk_client.send_text(
+                message.reply_target, user_message_for(FailureCode.TIMEOUT)
+            )
         except Exception:
             release_delivery(delivery_key)
             raise
@@ -269,6 +282,11 @@ def feishu_callback():
                 send_result = feishu_client.send_text_to_chat(message.reply_target, ai_reply)
                 if isinstance(send_result, dict) and send_result.get("code") != 0:
                     logger.error("Feishu send returned error payload: %s", send_result)
+            except TimeoutError:
+                release_delivery(delivery_key)
+                feishu_client.send_text_to_chat(
+                    message.reply_target, user_message_for(FailureCode.TIMEOUT)
+                )
             except Exception as e:
                 release_delivery(delivery_key)
                 logger.error("Feishu error while processing message: %s", e)

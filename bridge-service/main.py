@@ -1,4 +1,4 @@
-"""Entry point for running the chat connector with Flask's development server."""
+"""Entry point for running the bridge service with Flask's development server."""
 
 import os
 

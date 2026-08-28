@@ -10,7 +10,7 @@
 
 ---
 
-> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md). The data-retention claim in this translation is outdated — English docs are authoritative; see [TRANSLATION_NEEDED.md](../TRANSLATION_NEEDED.md).
 
 기업용 메시징 앱(LINE WORKS, WeChat(위챗), Feishu(페이슈) 등)을 AI 기반 오케스트레이션으로 Workday에 연결하는 참조 아키텍처입니다. 직원이 매일 사용하는 앱 안에서 AI를 이용할 수 있어야 하는 시장을 위해 설계되었습니다.
 

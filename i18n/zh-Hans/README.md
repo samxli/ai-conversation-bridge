@@ -10,7 +10,7 @@
 
 ---
 
-> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md). The data-retention claim in this translation is outdated — English docs are authoritative; see [TRANSLATION_NEEDED.md](../TRANSLATION_NEEDED.md).
 
 一套参考架构，借助由 AI 驱动的编排能力，将 LINE WORKS、WeChat（微信）、Feishu（飞书）等企业消息应用连接到 Workday。它专为这样的市场而设计：让用户在他们日常使用的应用中就能用上 AI。
 

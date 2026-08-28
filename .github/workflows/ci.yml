@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-check:
+    name: Lint and checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-python@83679eac4f573ebfbe236b13f675f1fa8fd8892f # v6.1.0
+        with:
+          python-version: "3.13"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Install bridge dependencies
+        run: pip install -r bridge-service/requirements.txt
+
+      - name: Run check scripts
+        working-directory: bridge-service
+        run: |
+          for f in tests/check_*.py; do
+            PYTHONPATH=. python "$f"
+          done
+
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Build bridge-service
+        run: docker build -t bridge-service-test bridge-service
+
+      - name: Build mcp-demo-server
+        run: docker build -t mcp-demo-server-test mcp-demo-server

@@ -10,7 +10,7 @@
 
 ---
 
-> **Outdated translation:** This page has not been updated for v0.2.0. See the [English version](../../../docs/architecture.md).
+> **Outdated translation:** This page has not been updated for v0.2.0. See the [English version](../../../docs/architecture.md). The data-retention claim in this translation is outdated — English docs are authoritative; see [TRANSLATION_NEEDED.md](../../TRANSLATION_NEEDED.md).
 
 ## 概要
 <p align="center">

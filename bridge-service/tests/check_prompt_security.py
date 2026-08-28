@@ -12,7 +12,7 @@ from app.core.prompt_security import (
     response_contains_canary_leak,
     wrap_user_input,
 )
-from app.core.response_validator import ResponseValidator, SECURITY_BLOCKED_RESPONSE
+from app.core.response_validator import SECURITY_BLOCKED_RESPONSE, ResponseValidator
 from app.orchestration.langgraph.prompts import SYSTEM_PROMPT, build_system_prompt
 
 

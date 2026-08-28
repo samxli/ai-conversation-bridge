@@ -10,7 +10,7 @@
 
 ---
 
-> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md).
+> **Outdated translation:** This page has not been updated for v0.2.0 (LangGraph default). See the [English version](../../README.md). The data-retention claim in this translation is outdated — English docs are authoritative; see [TRANSLATION_NEEDED.md](../TRANSLATION_NEEDED.md).
 
 AI駆動のオーケストレーションにより、企業向けメッセージングアプリ（LINE WORKS、WeChat（ウィーチャット）、Feishu（フィーシュー）など）をWorkdayに接続するリファレンスアーキテクチャです。ワーカーが日常的に使うアプリの中でAIを利用できることが求められる市場向けに設計されています。
 

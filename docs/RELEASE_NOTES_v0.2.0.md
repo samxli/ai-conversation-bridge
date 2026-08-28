@@ -40,3 +40,15 @@ Canonical change list: [CHANGELOG.md](../CHANGELOG.md) (`[Unreleased] — 0.2.0`
 ## Reference testing notes
 
 LangGraph on Cloud Run was exercised at **256Mi** memory. The deploy script does not pin memory — use platform defaults unless you hit OOM.
+
+## Known limitations (v0.2.0)
+
+These are documented limits, not bugs fixed in this release:
+
+- **DingTalk** (`/dingtalk/callback`) performs no inbound signature or timestamp verification. With a public URL, combine `DINGTALK_ALLOW_ALL_USERS=false`, a narrow `DINGTALK_ALLOWED_USERS` list, and `DINGTALK_REQUIRE_MENTION=true`. Narrow `MCP_TOOL_ALLOWLIST` to read-only tools outside controlled tests — the reference allowlist includes `request_my_time_off`.
+- **LINE WORKS** skips webhook signature verification when `LW_API_20_BOT_SECRET` is unset (warning logged; returns success).
+- **Feishu** verifies the event token with plain `==`, not `hmac.compare_digest`; no `X-Lark-Signature` HMAC path. Encrypted payloads are rejected with 400.
+- **Conversation state** lives in process memory (`STATE_BACKEND=memory` → `InMemorySaver`). Tool results can include HR data; there is no TTL or eviction. `STATE_BACKEND=firestore` is unimplemented.
+- **Single replica:** use `--max-instances=1` with in-memory state. Do not use gunicorn `--preload` or `--workers > 1` (see `app/__init__.py` async loop).
+- **Timeouts:** orchestration timeouts release the idempotency key so chat platforms can retry; the user receives the timeout message on that attempt.
+

@@ -16,7 +16,7 @@ promise API or deploy-surface stability.
 - Renamed `chat-connector/` to `bridge-service/` and the Cloud Run service name to `bridge-service` (create the new service and re-point callbacks; Cloud Run does not support renaming an existing service).
 - **Default orchestrator is now `langgraph`** when `ORCHESTRATOR` and legacy `AI_PROVIDER` / `CHAT_PROVIDER` are unset (was implicit Flowise).
 - Prefer `ORCHESTRATOR` over `AI_PROVIDER` / `CHAT_PROVIDER` (deprecated aliases still work for one release).
-- LangGraph with `STATE_BACKEND=memory` requires a single Cloud Run instance (`--min-instances=1 --max-instances=1`); conversation state is not shared across replicas.
+- LangGraph with `STATE_BACKEND=memory` requires `--max-instances=1` so conversation state is not fragmented across replicas.
 - LangGraph fails process startup if MCP discovery fails, an allowlisted tool is missing from the server, or no usable tools remain.
 - Startup validation requires orchestrator credentials on first container boot (deploy-then-configure in Cloud Run console no longer works for LangGraph).
 
@@ -47,4 +47,4 @@ First tagged snapshot of the AI Conversation Bridge reference architecture.
 - Documentation and scripts for Cloud Run–style public deployment
 - Localized README and architecture docs (zh-Hans, zh-Hant, ja, ko)
 
-[0.1.0]: https://github.com/samxli/ai-conversation-bridge/releases/tag/v0.1.0
+[0.1.0]: https://github.com/Workday/ai-conversation-bridge/releases/tag/v0.1.0
