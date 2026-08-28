@@ -40,19 +40,11 @@ The AI Conversation Bridge is a reference architecture for connecting enterprise
 
 ## System Architecture
 
-```
-┌────────────────────────────────────────────────────────────────────────────────┐
-│                          AI CONVERSATION BRIDGE                                │
-│                                                                                │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────┐ │
-│  │ Chat Services│ --> │    Bridge    │ --> │  LangGraph   │ --> │ Workday MCP│ │
-│  │  (External)  │ <-- │    Service   │ <-- │ (in-process) │ <-- │            │ │
-│  └──────────────┘     └──────────────┘     └──────────────┘     └────────────┘ │
-│                                                                                │
-│  LINE / Lark /          Webhook adapters     ReAct + Chat           Mock (dev) │
-│  DingTalk / Feishu      Message routing      Completions         or Gateway    │
-└────────────────────────────────────────────────────────────────────────────────┘
-```
+The diagram above is the canonical view. At a high level:
+
+**Chat platforms** (LINE WORKS, DingTalk, Feishu, …) → **bridge service** (webhook adapters + bundled LangGraph, one process) → **MCP** (demo server or Workday Agent Gateway) → **Workday**.
+
+LangGraph is not a separate deployable box — it runs inside [`bridge-service/`](../bridge-service/) with the channel adapters. Outbound LLM calls go to your configured Chat Completions provider (see the diagram's LLM providers arm).
 
 ## Component Details
 

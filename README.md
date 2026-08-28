@@ -41,18 +41,17 @@ While we built this with APJ in mind, the pattern works anywhere you want to use
 ## Architecture
 
 ```text
-Chat App  ←→  bridge service  ←→  LangGraph (in-process)  ←→  MCP Server  ←→  Workday
+Chat platforms  ←→  bridge service (LangGraph)  ←→  MCP server  ←→  Workday
 ```
 
-The project has three main pieces. **LangGraph is the brain** — it connects to LLMs, figures out what the user wants, and calls Workday tools via MCP. The bridge service listens to chat apps; the MCP server executes actions in Workday (mock data in the demo).
+The project has three deployable pieces. **The bridge service is the brain** — channel adapters plus in-process LangGraph (LLM + MCP tool calls). The MCP server executes Workday actions (mock data in the demo).
 
 *(For more details on boundaries and intended usage, check out [docs/architecture.md](docs/architecture.md).)*
 
 
 | Component           | What it does                                                                                   | Where it lives                         |
 | ------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **bridge service**  | Channel adapters plus orchestrator selection; receives messages and sends replies.             | [bridge-service/](bridge-service/)   |
-| **LangGraph**       | Default in-process ReAct agent (`ORCHESTRATOR=langgraph`) — MCP from the bridge.               | [bridge-service/](bridge-service/)   |
+| **bridge service**  | Channel adapters + in-process LangGraph (`ORCHESTRATOR=langgraph`); receives messages and sends replies. | [bridge-service/](bridge-service/)   |
 | **Demo MCP Server** | Mock Workday tools for testing and development. (Swap for Workday Agent Gateway in production). | [mcp-demo-server/](mcp-demo-server/) |
 | **Flowise Flows**   | Deprecated visual orchestration (`ORCHESTRATOR=flowise`); Flowise EOL 31 Aug 2026.             | [flowise/](flowise/)                 |
 
