@@ -32,8 +32,7 @@ promise API or deploy-surface stability.
 - Direct LLM orchestrator (`ORCHESTRATOR=direct_llm`, formerly OpenRouter path)
 - Startup validation for required orchestrator settings
 - Feishu (Lark) channel adapter (`/feishu/callback`)
-- In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash) with `release()` on failed deliveries
-- LangGraph `asyncio.wait_for` around graph invoke; timeout surfaces as user-facing message and releases the idempotency key for platform retries
+- In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash). `release()` runs on failed outbound sends (including Feishu IM `code != 0` → HTTP 502) so the platform can retry. A LangGraph **wait_for** timeout is different: the user gets a timeout chat message and the key **stays claimed** so the same turn is not retried (`request_my_time_off` is not end-to-end idempotent). An outer hang (`TimeoutError` after wait_for + 30s) still releases.
 - Architecture diagram (`docs/assets/architecture.png`) for LangGraph-first hub-and-spoke design
 - CI workflow: ruff, check scripts, Docker builds
 
@@ -54,6 +53,7 @@ promise API or deploy-surface stability.
 - **Feishu** verifies the event token with plain `==`, not `hmac.compare_digest`; no `X-Lark-Signature` HMAC path. Encrypted payloads are rejected with 400.
 - **Conversation state** lives in process memory (`STATE_BACKEND=memory` → `InMemorySaver`). Tool results can include HR data; there is no TTL or eviction. `STATE_BACKEND=firestore` is unimplemented.
 - **Single replica:** use `--max-instances=1` with in-memory state. Do not use gunicorn `--preload` or `--workers > 1`.
+- **Timeouts:** LangGraph `wait_for` (default 240s) replies in-chat and **keeps** the idempotency key — send a new message; the same webhook is not retried. `release()` + platform retry applies to failed **sends** (and a rarer outer hang), not that wait_for path.
 - LangGraph on Cloud Run was exercised at **256Mi** memory; the deploy script does not pin memory.
 
 ## [0.1.0] — 2026-08-07

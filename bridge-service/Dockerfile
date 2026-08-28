@@ -15,6 +15,9 @@ USER appuser
 
 EXPOSE 8080
 
+# Listen address is fixed at 8080 (Cloud Run default). $PORT in Config is for
+# `python main.py` only; do not pass gcloud --port other than 8080.
+
 # One worker with multiple threads: I/O-bound orchestration shares in-memory
 # conversation state. Multiple workers would fragment STATE_BACKEND=memory.
 # Timeout above ORCHESTRATOR_TIMEOUT (default 240) so typed failures return first.

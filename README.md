@@ -137,7 +137,7 @@ Send one real chat message to confirm end-to-end delivery.
 | **Direct LLM** | Webhook smoke tests without tools | `ORCHESTRATOR=direct_llm`, `LLM_API_KEY` |
 | **Flowise** (deprecated) | Legacy self-hosted Flowise only | `ORCHESTRATOR=flowise`, `FLOWISE_API_URL` |
 
-See [bridge-service/.env.example](bridge-service/.env.example) for all variables.
+See [bridge-service/.env.example](bridge-service/.env.example) for the variable catalog (Compose / local). Cloud Run uses the console after first deploy.
 
 ## Project Structure
 

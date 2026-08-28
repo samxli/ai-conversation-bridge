@@ -194,7 +194,11 @@ def dingtalk_callback():
                 f"DingTalk message from {message.sender_id} exceeds max length "
                 f"({len(message.text)} > {Config.MAX_MESSAGE_LENGTH})"
             )
-            dingtalk_client.send_text(message.reply_target, message_too_long_response())
+            try:
+                dingtalk_client.send_text(message.reply_target, message_too_long_response())
+            except Exception:
+                release_delivery(delivery_key)
+                raise
             return 'OK', 200
 
         try:
@@ -282,6 +286,8 @@ def feishu_callback():
                 send_result = feishu_client.send_text_to_chat(message.reply_target, ai_reply)
                 if isinstance(send_result, dict) and send_result.get("code") != 0:
                     logger.error("Feishu send returned error payload: %s", send_result)
+                    release_delivery(delivery_key)
+                    return jsonify({"error": "Feishu send failed"}), 502
             except TimeoutError:
                 release_delivery(delivery_key)
                 feishu_client.send_text_to_chat(

@@ -28,5 +28,8 @@ docker-compose.override.yml
 # Logs
 *.log
 
+# Local deploy audit (may contain project ids / emails)
+CLOUD_RUN_READINESS.md
+
 # OS
 Thumbs.db
