@@ -44,14 +44,13 @@ The AI Conversation Bridge is a reference architecture for connecting enterprise
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                          AI CONVERSATION BRIDGE                                │
 │                                                                                │
-│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐  ┌───────────┐ │
-│  │ Chat Services  │  │    Bridge      │  │    LangGraph     │  │ Workday   │ │
-│  │  (External)    │─▶│    Service     │─▶│  (in-process)    │─▶│   MCP     │ │
-│  │                │◀─│                │◀─│  + LLM providers │◀─│           │ │
-│  └────────────────┘  └────────────────┘  └──────────────────┘  └───────────┘ │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────┐ │
+│  │ Chat Services│ --> │    Bridge    │ --> │  LangGraph   │ --> │ Workday MCP│ │
+│  │  (External)  │ <-- │    Service   │ <-- │ (in-process) │ <-- │            │ │
+│  └──────────────┘     └──────────────┘     └──────────────┘     └────────────┘ │
 │                                                                                │
-│  LINE / Lark /     Webhook adapters      ReAct agent + tools    Mock (dev) or │
-│  DingTalk / Feishu Message routing       OpenAI Chat Completions Agent Gateway│
+│  LINE / Lark /          Webhook adapters     ReAct + Chat           Mock (dev) │
+│  DingTalk / Feishu      Message routing      Completions         or Gateway    │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
