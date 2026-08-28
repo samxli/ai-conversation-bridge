@@ -33,4 +33,4 @@ This project handles sensitive data including:
 
 For detailed technical hardening recommendations (rate limiting, PII redaction, retry logic, prompt injection defenses, observability, and more), see the [Enterprise Hardening Guide](docs/enterprise-guide.md).
 
-For v0.2.0 channel-auth and in-memory state limits, see [Release notes — Known limitations](docs/RELEASE_NOTES_v0.2.0.md#known-limitations-v020).
+For v0.2.0 channel-auth and in-memory state limits, see [Changelog — Known limitations](CHANGELOG.md#known-limitations).

@@ -158,8 +158,7 @@ ai-conversation-bridge/
 - [Setup Guide](docs/setup-guide.md) — Install, configure, verify, and clean up
 - [Architecture](docs/architecture.md) — Boundaries, state, and security model
 - [Enterprise Hardening Guide](docs/enterprise-guide.md) — Production gaps and mitigations
-- [Release notes v0.2.0 (draft)](docs/RELEASE_NOTES_v0.2.0.md) — Migration from v0.1.0
-- [Changelog](CHANGELOG.md) — Release history
+- [Changelog](CHANGELOG.md) — Release history and v0.2.0 migration from v0.1.0
 - [Flowise templates (deprecated)](flowise/README.md)
 - [Contributing](CONTRIBUTING.md)
 

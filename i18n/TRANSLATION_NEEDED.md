@@ -20,7 +20,7 @@ Bring localized docs in line with the English sources for at least:
 | Area | English location | Notes |
 | --- | --- | --- |
 | Flowise sunset banner | `README.md`, `docs/architecture.md`, `docs/setup-guide.md`, `docs/enterprise-guide.md` | EOL 31 Aug 2026; link flowiseai.com/sunset and archived GitHub repo |
-| Default orchestrator | `README.md`, `docs/setup-guide.md`, release notes | `langgraph` is default; Flowise deprecated opt-in |
+| Default orchestrator | `README.md`, `docs/setup-guide.md`, `CHANGELOG.md` | `langgraph` is default; Flowise deprecated opt-in |
 | Orchestrators table | `README.md` (Orchestrators) | LangGraph first; Flowise marked deprecated |
 | Component table + architecture chain | `README.md` (Architecture) | LangGraph in-process; not Flowise-as-core |
 | Quick Start / deploy | `README.md`, `docs/setup-guide.md` | Env on first Cloud Run revision; `LLM_API_KEY` + `MCP_SERVER_URL` |
