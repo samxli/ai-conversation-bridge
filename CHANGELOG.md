@@ -21,6 +21,7 @@ promise API or deploy-surface stability.
 - LangGraph with `STATE_BACKEND=memory` requires `--max-instances=1` so conversation state is not fragmented across replicas.
 - LangGraph fails process startup if MCP discovery fails, an allowlisted tool is missing from the server, or no usable tools remain.
 - Startup validation requires orchestrator credentials on first container boot (deploy-then-configure in Cloud Run console no longer works for LangGraph).
+- **LINE WORKS** rejects callbacks with HTTP 401 when `LW_API_20_BOT_SECRET` is unset (was fail-open).
 
 ### Added
 
@@ -35,6 +36,7 @@ promise API or deploy-surface stability.
 - In-process webhook idempotency (Feishu `message_id`, DingTalk `msgId`, LINE WORKS body hash). `release()` runs on failed outbound sends (including Feishu IM `code != 0` → HTTP 502) so the platform can retry. A LangGraph **wait_for** timeout is different: the user gets a timeout chat message and the key **stays claimed** so the same turn is not retried (`request_my_time_off` is not end-to-end idempotent). An outer hang (`TimeoutError` after wait_for + 30s) still releases.
 - Architecture diagram (`docs/assets/architecture.png`) for LangGraph-first hub-and-spoke design
 - CI workflow: ruff, check scripts, Docker builds
+- Outer orchestration `TimeoutError` cancels the in-flight asyncio task so a released webhook retry cannot overlap a still-running invoke
 
 ### Migration from v0.1.0
 
@@ -43,13 +45,13 @@ promise API or deploy-surface stability.
 - [ ] Deploy `mcp-demo-server` first; set `MCP_SERVER_URL` to its `/mcp` URL on the first bridge revision
 - [ ] Set `LLM_API_KEY` (and optional `LLM_BASE_URL` / `LLM_MODEL`) on first bridge deploy
 - [ ] Re-point LINE WORKS, DingTalk, and Feishu callbacks (`/lineworks/callback`, `/dingtalk/callback`, `/feishu/callback`)
+- [ ] Set `LW_API_20_BOT_SECRET` (LINE WORKS callbacks return 401 without it)
 - [ ] If still on Flowise: set `ORCHESTRATOR=flowise` and `FLOWISE_API_URL` explicitly
 - [ ] Delete the old `chat-connector` Cloud Run service after cutover
 
 ### Known limitations
 
 - **DingTalk** (`/dingtalk/callback`) performs no inbound signature or timestamp verification. With a public URL, combine `DINGTALK_ALLOW_ALL_USERS=false`, a narrow `DINGTALK_ALLOWED_USERS` list, and `DINGTALK_REQUIRE_MENTION=true`. Narrow `MCP_TOOL_ALLOWLIST` to read-only tools outside controlled tests — the reference allowlist includes `request_my_time_off`.
-- **LINE WORKS** skips webhook signature verification when `LW_API_20_BOT_SECRET` is unset (warning logged; returns success).
 - **Feishu** verifies the event token with plain `==`, not `hmac.compare_digest`; no `X-Lark-Signature` HMAC path. Encrypted payloads are rejected with 400.
 - **Conversation state** lives in process memory (`STATE_BACKEND=memory` → `InMemorySaver`). Tool results can include HR data; there is no TTL or eviction. `STATE_BACKEND=firestore` is unimplemented.
 - **Single replica:** use `--max-instances=1` with in-memory state. Do not use gunicorn `--preload` or `--workers > 1`.

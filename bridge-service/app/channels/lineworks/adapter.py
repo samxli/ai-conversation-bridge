@@ -22,15 +22,14 @@ class LineWorksAdapter:
     def verify_signature(self, request_body: bytes, signature: str) -> bool:
         """Verify LINE WORKS webhook signature (HMAC-SHA256 with Bot Secret).
 
-        Returns True if verification passes or if bot_secret is not configured
-        (to preserve backward compatibility for development setups).
+        Returns True only when the Bot Secret is configured and signature matches.
         """
         if not self.client.bot_secret:
             logger.warning(
-                "LW_API_20_BOT_SECRET not set — skipping webhook signature verification. "
-                "This is insecure; set the Bot Secret for production deployments."
+                "LW_API_20_BOT_SECRET not set; rejecting webhook because "
+                "signature verification is unavailable."
             )
-            return True
+            return False
 
         expected = hmac.new(
             self.client.bot_secret.encode("utf-8"),

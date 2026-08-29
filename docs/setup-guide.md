@@ -160,7 +160,7 @@ No `MCP_SERVER_URL` required.
 
 1. Create a bot in the [LINE WORKS Developer Console](https://developers.worksmobile.com/).
 2. Configure OAuth / service account credentials and map them to `LW_API_20_*` (see `.env.example` for names; set values in the Cloud Run console).
-3. Set `LW_API_20_BOT_SECRET` in production — without it, signature verification is skipped with a warning.
+3. Set `LW_API_20_BOT_SECRET`; without it, callbacks are rejected with HTTP 401.
 4. Set callback URL to `<bridge-url>/lineworks/callback`.
 
 **Private keys:** paste directly, use literal `\n`, or store in Secret Manager. The bridge normalizes PEM formatting.

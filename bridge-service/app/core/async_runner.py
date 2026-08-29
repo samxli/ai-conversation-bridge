@@ -50,4 +50,11 @@ def run_coroutine(coro: Coroutine[Any, Any, T], timeout: float | None = None) ->
     """Submit a coroutine to the shared loop and block until it completes."""
     loop = get_loop()
     future = asyncio.run_coroutine_threadsafe(coro, loop)
-    return future.result(timeout=timeout)
+    try:
+        return future.result(timeout=timeout)
+    except TimeoutError:
+        # result() does not cancel the asyncio task; without this, webhook
+        # handlers release idempotency and a retry can overlap the still-running
+        # invoke (including MCP writes).
+        future.cancel()
+        raise

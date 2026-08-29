@@ -29,7 +29,7 @@ This project handles sensitive data including:
 - Restrict MCP server access to the bridge service (and authenticate production MCP endpoints)
 - Regularly rotate API keys and tokens
 - Use official Workday MCP servers (Agent Gateway) instead of the demo server in production
-- Set `LW_API_20_BOT_SECRET` for LINE WORKS signature verification; treat DingTalk's `DINGTALK_ALLOWED_USERS` filter as demo-only without additional ingress controls
+- Set `LW_API_20_BOT_SECRET` for LINE WORKS (callbacks are rejected without it); treat DingTalk's `DINGTALK_ALLOWED_USERS` filter as demo-only without additional ingress controls
 
 For detailed technical hardening recommendations (rate limiting, PII redaction, retry logic, prompt injection defenses, observability, and more), see the [Enterprise Hardening Guide](docs/enterprise-guide.md).
 
