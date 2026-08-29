@@ -49,7 +49,7 @@ docker compose up --build    # run locally for log inspection / MCP testing
 
 Follow existing patterns in each component. The key conventions:
 
-- **bridge service** (`bridge-service/app/`) — Config in `config.py`, routes in `routes.py`, one service file per platform/provider in `services/`. New chat platform adapters should use platform-scoped routes such as `/lineworks/callback` or `/dingtalk/callback`, then call the shared AI pipeline with a platform-scoped session id. Update `.env.example` with any new required variables.
+- **bridge service** (`bridge-service/app/`) — Config in `config.py`, routes in `api/routes.py`, one adapter and client per platform in `channels/<platform>/`. New chat platform adapters should use platform-scoped routes such as `/lineworks/callback` or `/dingtalk/callback`, then call the shared AI pipeline with a platform-scoped session id. Update `.env.example` with any new required variables.
 
 - **LangGraph orchestrator** (`bridge-service/app/orchestration/langgraph/`) — Default path; MCP tool discovery and allowlist live here.
 
