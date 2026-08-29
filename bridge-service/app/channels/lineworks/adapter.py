@@ -64,11 +64,15 @@ class LineWorksAdapter:
             logger.warning("No userId found in source")
             return None
 
-        if message_type != 'text' or not user_text:
+        if message_type != 'text' or not isinstance(user_text, str):
             logger.info("Received non-text message or empty text.")
             return None
 
         user_text = user_text.strip()
+        if not user_text:
+            logger.info("Received non-text message or empty text.")
+            return None
+
         if len(user_text) > self.max_message_length:
             logger.warning(
                 f"Message from {user_id} exceeds max length "

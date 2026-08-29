@@ -52,6 +52,13 @@ def main() -> None:
     assert configured.verify_signature(body, signature) is True
     assert configured.verify_signature(body, "invalid") is False
 
+    whitespace = {
+        "type": "message",
+        "source": {"userId": "u1"},
+        "content": {"type": "text", "text": "   "},
+    }
+    assert configured.parse_inbound(whitespace) is None
+
     print("LINE WORKS signature checks passed")
 
 
